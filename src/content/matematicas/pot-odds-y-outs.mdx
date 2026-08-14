@@ -1,0 +1,63 @@
+Toda decisión de pagar se reduce a comparar dos números: lo que te cuesta seguir y lo que puedes ganar. Si el precio es mejor que tus posibilidades, pagas. Si no, tiras. No hay más.
+
+## Pot odds: el precio
+
+Hay 100 en el bote y el rival apuesta 50. Para seguir pagas 50, y si ganas te llevas 200: los 100 que había, sus 50 y tus 50.
+
+> **Equity necesaria = lo que pagas / el bote que te llevas si ganas**
+
+En el ejemplo: 50 / 200 = **25%**. Si ganas la mano más de una de cada cuatro veces, pagar gana dinero.
+
+Con un bote de 100 antes de su apuesta, esto es lo que te pide cada tamaño:
+
+| Apuesta del rival | Pagas | Te llevas | Equity necesaria |
+| --- | --- | --- | --- |
+| 1/3 del bote (33) | 33 | 166 | 20% |
+| 1/2 del bote (50) | 50 | 200 | 25% |
+| 2/3 del bote (66) | 66 | 233 | 29% |
+| El bote entero (100) | 100 | 300 | 33% |
+| Dos veces el bote (200) | 200 | 500 | 40% |
+
+Memoriza estas cinco filas y tienes resuelto el 90% de los calls de tu vida.
+
+## Outs: tus posibilidades
+
+Un **out** es una carta que convierte tu mano en ganadora.
+
+| Proyecto | Outs |
+| --- | --- |
+| Color (4 del palo) | 9 |
+| Escalera abierta | 8 |
+| Color + escalera abierta | 15 |
+| Escalera interior (gutshot) | 4 |
+| Dos overcards | 6 |
+| Pareja a trío | 2 |
+
+## La regla del 2 y el 4
+
+La aproximación que se usa en la mesa, porque se puede hacer en tres segundos:
+
+- **En el flop** (quedan turn y river): outs × 4 = % aproximado.
+- **En el turn** (queda el river): outs × 2 = % aproximado.
+
+Proyecto de color en el flop: 9 × 4 = 36%. El valor exacto es 35%. Suficiente.
+
+<Callout tipo="aviso">
+La regla del 4 solo vale si vas a ver **las dos cartas**. Si te van a apostar otra vez en el turn, la cuenta buena es outs × 2 para la carta siguiente.
+</Callout>
+
+## Juntándolo
+
+Flop: A♠ 8♠ 3♦. Tú llevas K♠ Q♠: proyecto de color, 9 outs, 35%.
+
+El bote es 100 y te apuestan 50. Necesitas 25% y tienes 35%: **call fácil**.
+
+Si te apuestan 200 sobre un bote de 100, necesitas 40% y tienes 35%: **fold**, salvo que las implied odds lo arreglen (lección siguiente).
+
+<Callout tipo="error">
+Contar outs que no te dan la mejor mano. Si ligas tu color pero el board empareja, o si tus overcards ligan pareja contra un trío, ese out no es un out. Cuenta solo las cartas que te hacen ganar de verdad.
+</Callout>
+
+<Callout tipo="practica">
+Abre la [calculadora de odds](/herramientas/odds), mete cinco situaciones que hayas jugado esta semana y comprueba si tus calls tenían precio. Es el ejercicio que más rápido cambia resultados.
+</Callout>

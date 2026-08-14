@@ -1,0 +1,211 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/*
+  Paleta "fieltro y latón": el verde del tapete, el latón de las fichas y el
+  crema de las cartas. Tema oscuro único, a propósito: es una web para leer de
+  noche entre sesiones.
+*/
+@theme {
+  --color-felt-950: #070d0a;
+  --color-felt-900: #0b1512;
+  --color-felt-850: #0f1c17;
+  --color-felt-800: #14251e;
+  --color-felt-700: #1c332a;
+  --color-felt-600: #27473a;
+
+  --color-brass-500: #c9a227;
+  --color-brass-400: #dbb64a;
+  --color-brass-300: #e9cd82;
+  --color-brass-200: #f2e0b0;
+
+  --color-cream: #f4efe2;
+  --color-cream-dim: #cdc6b6;
+  --color-cream-faint: #8f897c;
+
+  --color-suit-red: #d9534f;
+  --color-action-raise: #d9a441;
+  --color-action-3bet: #c2453f;
+  --color-action-call: #4f9d6b;
+  --color-action-fold: #2a3730;
+
+  --font-display: var(--font-bodoni), "Didot", Georgia, serif;
+  --font-body: var(--font-newsreader), Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-card: 0.35rem;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-felt-950);
+    color: var(--color-cream);
+    font-family: var(--font-body);
+    /* Halo de luz sobre el tapete + grano fino para que el fondo no sea plano. */
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -10%, rgba(39, 71, 58, 0.55), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 85% 15%, rgba(201, 162, 39, 0.07), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background: var(--color-brass-500);
+    color: var(--color-felt-950);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brass-400);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Filete de latón que separa secciones, más fino en los extremos. */
+  .rule-brass {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in oklab, var(--color-brass-500) 55%, transparent),
+      transparent
+    );
+  }
+
+  .surface {
+    background: linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--color-felt-850) 92%, transparent),
+      color-mix(in oklab, var(--color-felt-900) 96%, transparent)
+    );
+    border: 1px solid color-mix(in oklab, var(--color-brass-500) 18%, transparent);
+  }
+
+  .surface-hover {
+    transition:
+      border-color 200ms ease,
+      transform 200ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .surface-hover:hover {
+    border-color: color-mix(in oklab, var(--color-brass-500) 45%, transparent);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.9);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-brass-300);
+  }
+
+  /* Números grandes de fase, en hueco, como en una portada de revista. */
+  .numeral {
+    font-family: var(--font-display);
+    font-variant-numeric: lining-nums;
+    line-height: 0.8;
+    color: transparent;
+    -webkit-text-stroke: 1px color-mix(in oklab, var(--color-brass-500) 55%, transparent);
+  }
+}
+
+@layer utilities {
+  .animate-rise {
+    animation: rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-rise {
+      animation: none;
+    }
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* Tipografía de las lecciones: seria, ancha de interlineado y con latón en los acentos. */
+.prose-poker {
+  --tw-prose-body: var(--color-cream-dim);
+  --tw-prose-headings: var(--color-cream);
+  --tw-prose-links: var(--color-brass-300);
+  --tw-prose-bold: var(--color-cream);
+  --tw-prose-counters: var(--color-brass-400);
+  --tw-prose-bullets: color-mix(in oklab, var(--color-brass-500) 50%, transparent);
+  --tw-prose-quotes: var(--color-cream);
+  --tw-prose-quote-borders: var(--color-brass-500);
+  --tw-prose-th-borders: color-mix(in oklab, var(--color-brass-500) 35%, transparent);
+  --tw-prose-td-borders: color-mix(in oklab, var(--color-brass-500) 15%, transparent);
+}
+
+.prose-poker h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-top: 2.4em;
+}
+
+.prose-poker h2::before {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  margin-bottom: 0.9rem;
+  background: var(--color-brass-500);
+}
+
+.prose-poker table {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.prose-poker th {
+  color: var(--color-brass-300);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+}
+
+.prose-poker blockquote {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-size: 1.15em;
+}
+
+.prose-poker a {
+  text-decoration-color: color-mix(in oklab, var(--color-brass-500) 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.prose-poker a:hover {
+  color: var(--color-brass-200);
+}
