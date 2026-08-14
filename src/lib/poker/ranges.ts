@@ -125,23 +125,155 @@ function expandCached(notation: string): Set<HandCode> {
 
 export type RangeKind = "open" | "threeBet" | "call";
 
-export function rangeFor(position: Position, kind: RangeKind): Set<HandCode> {
-  const notation = POSITION_TABLE[position][kind];
+/* -------------------------------------------------------------- tamaño de mesa */
+
+export const TABLE_SIZES = [9, 8, 7, 6, 5, 4, 3, 2] as const;
+export type TableSize = (typeof TABLE_SIZES)[number];
+export const DEFAULT_TABLE_SIZE: TableSize = 9;
+
+export const TABLE_LABELS: Record<TableSize, string> = {
+  9: "9 · Full ring",
+  8: "8 jugadores",
+  7: "7 jugadores",
+  6: "6 · 6-max",
+  5: "5 jugadores",
+  4: "4 jugadores",
+  3: "3 · Mesa corta",
+  2: "2 · Heads-up",
+};
+
+/** Las sillas en orden de acción preflop. Al quitar jugadores desaparecen por delante. */
+const SEAT_ORDER: Position[] = [
+  "UTG",
+  "UTG+1",
+  "UTG+2",
+  "LJ",
+  "HJ",
+  "CO",
+  "BTN",
+  "SB",
+  "BB",
+];
+
+/**
+ * Sillas que existen en una mesa de N jugadores.
+ *
+ * Al quitar gente desaparecen las sillas más tempranas, pero primero se van los
+ * "UTG+n" para que el primero en hablar se siga llamando UTG, que es como se
+ * dice en la mesa. Por debajo de 7 ya no quedan y la primera pasa a ser el
+ * lojack (con el alias "(UTG)" en pantalla).
+ * En heads-up no hay ciega pequeña aparte: el botón la pone.
+ */
+export function positionsFor(size: TableSize): Position[] {
+  if (size === 2) return ["BTN", "BB"];
+  if (size === 8) return SEAT_ORDER.filter((seat) => seat !== "UTG+2");
+  if (size === 7) return SEAT_ORDER.filter((seat) => seat !== "UTG+1" && seat !== "UTG+2");
+  return SEAT_ORDER.slice(SEAT_ORDER.length - size);
+}
+
+/** Jugadores que todavía tienen que hablar detrás de ti si abres el bote. */
+export function seatsBehind(position: Position, size: TableSize = DEFAULT_TABLE_SIZE): number {
+  const seats = positionsFor(size);
+  const index = seats.indexOf(position);
+  if (index === -1) return 0;
+  return seats.length - 1 - index;
+}
+
+/**
+ * De cuántos jugadores por detrás sale cada rango.
+ * Ésta es la idea de fondo: una mesa de 6 no cambia el juego porque sea de 6,
+ * sino porque desde la primera silla ya solo quedan 5 por hablar. Por eso el
+ * primero en hablar en 6-max abre como el lojack de una mesa de 9.
+ */
+const SEAT_BY_BEHIND: Record<number, Position> = {
+  8: "UTG",
+  7: "UTG+1",
+  6: "UTG+2",
+  5: "LJ",
+  4: "HJ",
+  3: "CO",
+  2: "BTN",
+  1: "SB",
+};
+
+/** Heads-up: el botón juega en posición contra un solo rival, así que abre casi todo. */
+const HEADS_UP = {
+  open:
+    "22+, A2s+, K2s+, Q2s+, J2s+, T2s+, 92s+, 82s+, 72s+, 62s+, 52s+, 42s+, 32s, " +
+    "A2o+, K2o+, Q4o+, J6o+, T6o+, 96o+, 86o+, 75o+, 65o, 54o",
+  threeBet: "44+, A2s+, K7s+, Q9s+, JTs, A7o+, KTo+, QJo",
+  call: "22+, A2s+, K2s+, Q2s+, J4s+, T5s+, 95s+, 85s+, 74s+, 64s+, 53s+, 43s, A2o+, K5o+, Q8o+, J8o+, T8o+, 97o+, 87o, 76o, 65o",
+};
+
+/** Silla de referencia cuyos rangos se aplican a esta posición en esta mesa. */
+function referenceSeat(position: Position, size: TableSize): Position {
+  if (position === "BB") return "BB";
+  return SEAT_BY_BEHIND[seatsBehind(position, size)] ?? position;
+}
+
+/** La notación literal del rango, ya resuelta para ese tamaño de mesa. */
+export function notationFor(
+  position: Position,
+  kind: RangeKind,
+  size: TableSize = DEFAULT_TABLE_SIZE,
+): string | undefined {
+  if (size === 2) {
+    if (position === "BTN") return kind === "open" ? HEADS_UP.open : undefined;
+    if (position === "BB") {
+      return kind === "threeBet" ? HEADS_UP.threeBet : kind === "call" ? HEADS_UP.call : undefined;
+    }
+  }
+  return POSITION_TABLE[referenceSeat(position, size)][kind];
+}
+
+/**
+ * Nombre alternativo de la silla en mesas cortas: en 6-max al lojack se le
+ * llama UTG porque es el primero en hablar, y en heads-up el botón es la SB.
+ */
+export function aliasFor(position: Position, size: TableSize): string | null {
+  if (size === 2 && position === "BTN") return "BTN/SB";
+  const seats = positionsFor(size);
+  if (seats[0] === position && position !== "UTG") return `${position} (UTG)`;
+  return null;
+}
+
+/* ------------------------------------------------------------------- consultas */
+
+export function rangeFor(
+  position: Position,
+  kind: RangeKind,
+  size: TableSize = DEFAULT_TABLE_SIZE,
+): Set<HandCode> {
+  const notation = notationFor(position, kind, size);
   return notation ? expandCached(notation) : new Set<HandCode>();
 }
 
 /**
  * Qué hacer con una mano concreta.
  * En modo "open": subes las manos del rango de apertura y tiras el resto.
- * En modo "3bet": resubes las del rango de 3-bet, igualas las de call (solo BB) y tiras el resto.
+ * En modo "3bet": resubes las del rango de 3-bet, igualas las de call y tiras el resto.
  */
-export function actionFor(position: Position, hand: HandCode, kind: RangeKind = "open"): Action {
-  if (kind === "open") return rangeFor(position, "open").has(hand) ? "raise" : "fold";
-  if (rangeFor(position, "threeBet").has(hand)) return "3bet";
-  if (rangeFor(position, "call").has(hand)) return "call";
+export function actionFor(
+  position: Position,
+  hand: HandCode,
+  kind: RangeKind = "open",
+  size: TableSize = DEFAULT_TABLE_SIZE,
+): Action {
+  if (kind === "open") return rangeFor(position, "open", size).has(hand) ? "raise" : "fold";
+  if (rangeFor(position, "threeBet", size).has(hand)) return "3bet";
+  if (rangeFor(position, "call", size).has(hand)) return "call";
   return "fold";
 }
 
-export function percentFor(position: Position, kind: RangeKind): number {
-  return rangePercent(rangeFor(position, kind));
+export function percentFor(
+  position: Position,
+  kind: RangeKind,
+  size: TableSize = DEFAULT_TABLE_SIZE,
+): number {
+  return rangePercent(rangeFor(position, kind, size));
+}
+
+/** Posiciones que pueden abrir el bote en una mesa de N (todas menos la ciega grande). */
+export function openingPositionsFor(size: TableSize): Position[] {
+  return positionsFor(size).filter((position) => rangeFor(position, "open", size).size > 0);
 }
