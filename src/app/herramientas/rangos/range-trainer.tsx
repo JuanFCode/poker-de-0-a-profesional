@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ACTION_LABEL, GridLegend, HandGrid } from "@/components/hand-grid";
+import { PokerTable } from "@/components/poker-table";
+import { TableSizePicker } from "@/components/table-size-picker";
 import { Stat, ToolShell } from "@/components/tool-shell";
 import { PlayingCard } from "@/components/playing-card";
 import { makeCard, rankIndex, type Card } from "@/lib/poker/cards";
@@ -15,13 +18,12 @@ import {
   POSITION_TABLE,
   positionsFor,
   seatsBehind,
-  TABLE_LABELS,
-  TABLE_SIZES,
   type Action,
   type Position,
   type RangeKind,
   type TableSize,
 } from "@/lib/poker/ranges";
+import { playbookFor, turnNumber } from "@/lib/poker/table";
 import { STORAGE_KEYS, useStoredState } from "@/lib/storage";
 
 type Mode = "ver" | "test";
@@ -54,41 +56,6 @@ function cardsForHand(hand: HandCode): Card[] {
 /** Nombre de la silla tal y como se enseña: con su alias si la mesa es corta. */
 const seatLabel = (position: Position, size: TableSize): string =>
   aliasFor(position, size) ?? position;
-
-/** Selector de cuántos jugadores hay sentados. Manda sobre todo lo demás. */
-function TableSizePicker({
-  size,
-  onChange,
-}: {
-  size: TableSize;
-  onChange: (size: TableSize) => void;
-}) {
-  return (
-    <div className="surface rounded-xl p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="eyebrow">Jugadores en la mesa</p>
-        <p className="font-mono text-[10px] text-cream-faint">{TABLE_LABELS[size]}</p>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {TABLE_SIZES.map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onChange(value)}
-            aria-pressed={size === value}
-            className={`h-9 w-9 rounded-full font-mono text-[12px] transition-colors ${
-              size === value
-                ? "bg-brass-500 text-felt-950"
-                : "border border-brass-500/20 text-cream-dim hover:border-brass-500/50"
-            }`}
-          >
-            {value}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function RangeTrainer() {
   const [mode, setMode] = useState<Mode>("ver");
@@ -128,6 +95,7 @@ export function RangeTrainer() {
         : ["3bet", "fold"];
 
   const behind = seatsBehind(position, tableSize);
+  const plan = playbookFor(position, tableSize);
 
   return (
     <ToolShell
@@ -153,21 +121,16 @@ export function RangeTrainer() {
       {mode === "ver" ? (
         <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="min-w-0">
-            <div className="mb-5 flex flex-wrap gap-1.5">
-              {seats.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setPosition(value)}
-                  className={`rounded px-3 py-1.5 font-mono text-[11px] tracking-[0.1em] transition-colors ${
-                    position === value
-                      ? "bg-brass-500 text-felt-950"
-                      : "border border-brass-500/20 text-cream-dim hover:border-brass-500/50"
-                  }`}
-                >
-                  {seatLabel(value, tableSize)}
-                </button>
-              ))}
+            <div className="mb-6">
+              <PokerTable
+                size={tableSize}
+                hero={position}
+                onSelect={setPosition}
+                className="max-w-[440px]"
+              />
+              <p className="mt-2 text-center font-mono text-[10px] text-cream-faint">
+                Toca la silla desde la que quieras ver el rango
+              </p>
             </div>
 
             {position !== "BB" && (
@@ -227,7 +190,26 @@ export function RangeTrainer() {
                 {behind === 0
                   ? "Nadie habla después de ti preflop"
                   : `${behind} ${behind === 1 ? "jugador" : "jugadores"} por detrás`}
+                {" · "}
+                {`hablas ${turnNumber(position, tableSize)}.º de ${tableSize} en el flop`}
               </p>
+            </div>
+
+            <div className="surface rounded-xl p-5">
+              <p className="eyebrow">Cómo sacarle provecho</p>
+              <p className="mt-2.5 text-sm leading-relaxed text-cream-dim">{plan.edge}</p>
+              <p className="mt-3 border-t border-brass-500/15 pt-3 text-sm leading-relaxed text-cream-dim">
+                <span className="font-mono text-[10px] tracking-[0.16em] text-brass-300 uppercase">
+                  Farol{" "}
+                </span>
+                {plan.bluff}
+              </p>
+              <Link
+                href="/herramientas/mesa"
+                className="mt-4 inline-block font-mono text-[10px] tracking-[0.14em] text-brass-300 uppercase hover:text-brass-200"
+              >
+                Ver la mesa entera →
+              </Link>
             </div>
 
             <div className="surface rounded-xl p-5">
@@ -268,7 +250,15 @@ export function RangeTrainer() {
             <table className="w-full border-collapse text-left font-mono text-[12px]">
               <thead>
                 <tr>
-                  {["Posición", "Zona", "Por detrás", "% apertura", "% 3-bet"].map((head) => (
+                  {[
+                    "Posición",
+                    "Zona",
+                    "Por detrás",
+                    "Habla en el flop",
+                    "% apertura",
+                    "% 3-bet",
+                    "bb/100 típico",
+                  ].map((head) => (
                     <th
                       key={head}
                       className="border-b border-brass-500/25 bg-felt-850/80 px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.14em] text-brass-300"
@@ -281,6 +271,7 @@ export function RangeTrainer() {
               <tbody>
                 {seats.map((seat) => {
                   const open = percentFor(seat, "open", tableSize);
+                  const winrate = playbookFor(seat, tableSize).winrate;
                   return (
                     <tr key={seat}>
                       <td className="border-b border-brass-500/10 px-4 py-2.5 text-cream">
@@ -292,11 +283,22 @@ export function RangeTrainer() {
                       <td className="border-b border-brass-500/10 px-4 py-2.5 text-cream-faint">
                         {seatsBehind(seat, tableSize)}
                       </td>
+                      <td className="border-b border-brass-500/10 px-4 py-2.5 text-cream-faint">
+                        {turnNumber(seat, tableSize)}.º
+                      </td>
                       <td className="border-b border-brass-500/10 px-4 py-2.5 text-cream-dim">
                         {open > 0 ? `${open.toFixed(1)}%` : "—"}
                       </td>
                       <td className="border-b border-brass-500/10 px-4 py-2.5 text-cream-dim">
                         {percentFor(seat, "threeBet", tableSize).toFixed(1)}%
+                      </td>
+                      <td
+                        className={`border-b border-brass-500/10 px-4 py-2.5 ${
+                          winrate > 0 ? "text-action-call" : "text-suit-red"
+                        }`}
+                      >
+                        {winrate > 0 ? "+" : ""}
+                        {winrate}
                       </td>
                     </tr>
                   );
@@ -387,6 +389,12 @@ function TestMode({
           {seatsBehind(question.position, tableSize) === 1 ? "jugador" : "jugadores"} por detrás ·
           nadie ha subido todavía
         </p>
+
+        <PokerTable
+          size={tableSize}
+          hero={question.position}
+          className="mt-6 max-w-[380px]"
+        />
 
         <div className="my-8 flex justify-center gap-2">
           {question.cards.map((card, index) => (

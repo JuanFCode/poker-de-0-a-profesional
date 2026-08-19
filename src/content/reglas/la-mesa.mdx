@@ -1,5 +1,11 @@
 Una mesa de 9 jugadores tiene nueve sillas, y cada una tiene nombre. No es jerga: cada nombre indica cuánta información vas a tener cuando te toque decidir.
 
+## Siéntate y mira
+
+Cambia el número de jugadores y toca cualquier silla para sentarte ahí. Tú estás siempre abajo en el centro, como en cualquier sala online, y el reparto avanza hacia tu izquierda.
+
+<Mesa initialSize={9} initialHero="BTN" />
+
 ## Las nueve posiciones
 
 | Silla | Nombre | Zona |
@@ -42,12 +48,16 @@ Al quitar sillas desaparecen las posiciones más tempranas y todo se comprime. L
 | Jugadores | Primero en hablar | Abre aproximadamente |
 | --- | --- | --- |
 | 9 (full ring) | UTG, con 8 detrás | 9% |
+| 8 | UTG, con 7 detrás | 11% |
+| 7 | UTG, con 6 detrás | 13% |
 | 6 (6-max) | El lojack, con 5 detrás | 16% |
 | 4 | El cutoff, con 3 detrás | 28% |
 | 3 | El botón, con 2 detrás | 45% |
 | 2 (heads-up) | El botón, con 1 detrás | 75-85% |
 
 Traducido: el primero en hablar en 6-max abre exactamente como el lojack de una mesa de 9, porque ambos tienen cinco jugadores por detrás. No hace falta memorizar una tabla nueva por cada formato.
+
+Cuando alguien se levanta y la mesa se queda en 8 o en 7, no cambia nada de fondo: desaparecen las sillas de en medio y todos los que quedan tienen a menos gente por detrás, así que todos abren un poco más ancho. Al primero en hablar se le sigue llamando UTG.
 
 En **heads-up** hay una excepción: el botón pone la ciega pequeña, habla primero preflop y último en el resto de calles, así que abre casi cualquier cosa.
 

@@ -206,7 +206,7 @@ const HEADS_UP = {
 };
 
 /** Silla de referencia cuyos rangos se aplican a esta posición en esta mesa. */
-function referenceSeat(position: Position, size: TableSize): Position {
+export function referenceSeat(position: Position, size: TableSize): Position {
   if (position === "BB") return "BB";
   return SEAT_BY_BEHIND[seatsBehind(position, size)] ?? position;
 }

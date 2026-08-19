@@ -7,6 +7,7 @@ import { useState } from "react";
 const LINKS = [
   { href: "/ruta", label: "La ruta" },
   { href: "/curso/reglas/como-se-juega", label: "Curso", match: "/curso" },
+  { href: "/herramientas/mesa", label: "Mesa", match: "/herramientas/mesa" },
   { href: "/herramientas/rangos", label: "Rangos", match: "/herramientas/rangos" },
   { href: "/herramientas/odds", label: "Odds", match: "/herramientas/odds" },
   { href: "/herramientas/quiz", label: "Quiz", match: "/herramientas/quiz" },

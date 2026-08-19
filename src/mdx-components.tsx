@@ -1,13 +1,19 @@
 import type { MDXComponents } from "mdx/types";
 import Link from "next/link";
 import { Callout } from "@/components/callout";
+import { TableDiagram, TableExplorer } from "@/components/table-explorer";
 
 /**
- * Componentes globales de MDX. `Callout` está disponible en todas las lecciones
- * sin importarlo, y los enlaces internos usan el router de Next.
+ * Componentes globales de MDX. `Callout`, `Mesa` y `MesaDiagrama` están
+ * disponibles en todas las lecciones sin importarlos, y los enlaces internos
+ * usan el router de Next.
  */
 const components: MDXComponents = {
   Callout,
+  /** Mesa interactiva: te sientas donde quieras y te cuenta qué significa esa silla. */
+  Mesa: TableExplorer,
+  /** Mesa de solo lectura para ilustrar una posición concreta. */
+  MesaDiagrama: TableDiagram,
   a: ({ href, children, ...props }) => {
     const target = typeof href === "string" ? href : "";
     if (target.startsWith("/")) {

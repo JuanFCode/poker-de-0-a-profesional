@@ -37,6 +37,11 @@ export function SiteFooter() {
           <p className="eyebrow">Herramientas</p>
           <ul className="mt-3 space-y-2 text-sm text-cream-dim">
             <li>
+              <Link href="/herramientas/mesa" className="hover:text-brass-300">
+                La mesa y tu silla
+              </Link>
+            </li>
+            <li>
               <Link href="/herramientas/rangos" className="hover:text-brass-300">
                 Entrenador de rangos
               </Link>

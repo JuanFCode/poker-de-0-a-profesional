@@ -8,6 +8,12 @@ const HERO_CARDS = parseCards("AsKs");
 
 const TOOLS = [
   {
+    href: "/herramientas/mesa",
+    name: "La mesa y tu silla",
+    line: "Mesa interactiva de 2 a 9 jugadores: dónde estás, quién habla después y qué puedes hacer desde ahí.",
+    mark: "◎",
+  },
+  {
     href: "/herramientas/rangos",
     name: "Entrenador de rangos",
     line: "Las 169 manos, posición a posición, y un modo test que mide tu precisión.",
@@ -68,7 +74,7 @@ export default function Home() {
               {[
                 { k: `${TOTAL_LESSONS}`, v: "lecciones" },
                 { k: `~${hours} h`, v: "de lectura" },
-                { k: "4", v: "herramientas" },
+                { k: "5", v: "herramientas" },
                 { k: "12", v: "semanas de plan" },
               ].map((item) => (
                 <div key={item.v}>
@@ -153,7 +159,7 @@ export default function Home() {
         <div className="mt-16">
           <p className="eyebrow">Practicar, no solo leer</p>
           <h2 className="mt-3 max-w-2xl font-display text-4xl leading-tight tracking-tight text-cream">
-            Cuatro herramientas que funcionan en tu navegador
+            Cinco herramientas que funcionan en tu navegador
           </h2>
         </div>
 

@@ -53,6 +53,7 @@ export const CURRICULUM: Module[] = [
         title: "La mesa por dentro",
         summary: "Botón, ciegas y las nueve posiciones con sus nombres reales.",
         minutes: 5,
+        practice: { href: "/herramientas/mesa", label: "Mesa interactiva" },
       },
       {
         slug: "errores-de-principiante",
@@ -75,6 +76,7 @@ export const CURRICULUM: Module[] = [
         title: "La posición manda",
         summary: "Por qué la misma mano vale el doble desde el botón que desde UTG.",
         minutes: 6,
+        practice: { href: "/herramientas/mesa", label: "Mesa interactiva" },
       },
       {
         slug: "rangos-de-apertura",

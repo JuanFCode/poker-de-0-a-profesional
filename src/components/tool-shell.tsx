@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Cabecera común de las cuatro herramientas. */
+/** Cabecera común de las herramientas. */
 export function ToolShell({
   eyebrow,
   title,

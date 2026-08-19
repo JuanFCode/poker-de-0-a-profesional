@@ -12,6 +12,23 @@ Cuando hablas el último sabes lo que han hecho todos los demás antes de decidi
 Un jugador ganador gana casi todo su dinero desde el botón y el cutoff, y pierde dinero desde las ciegas. Es normal: es la estructura del juego.
 </Callout>
 
+## Dónde se gana y dónde se pierde
+
+Esto es lo que sacan por silla los jugadores sólidos, medido en bb/100 (ciegas grandes por cada 100 manos):
+
+| Silla | bb/100 típico | Por qué |
+| --- | --- | --- |
+| **BTN** | +25 a +30 | Hablas último en flop, turn y river |
+| **CO** | +10 a +15 | Robas ciegas y atacas al botón |
+| **HJ / LJ** | +3 a +8 | Abres ancho, pero aún te resuben desde atrás |
+| **Tempranas** | 0 a +3 | Rango corto: ganas poco, pero no pierdes |
+| **SB** | −10 a −15 | Dinero puesto y hablas primero siempre |
+| **BB** | −25 a −30 | Dinero puesto, fuera de posición toda la mano |
+
+No es un objetivo a corregir: es la forma del juego. La única silla en la que se toma la decisión de "ganar más" es el botón, y la única en la que se decide "perder menos" son las ciegas.
+
+<MesaDiagrama size={9} hero="BTN" caption="Desde el botón hablas el último en el flop, el turn y el river: ves actuar a los ocho antes de decidir nada." />
+
 ## Cuántos jugadores quedan por detrás
 
 Esta es la cuenta real que hay detrás de los rangos:
@@ -38,6 +55,14 @@ Dos jugadores en las ciegas que se retiran casi siempre valen más que dos que d
 Jugar "por aburrimiento" desde UTG. Las manos que te llegan ahí son las mismas que en el botón: lo que cambia es lo que pueden hacerte los ocho de detrás.
 </Callout>
 
+## Qué haces con la información
+
+Tener posición no sirve de nada si no la usas. Las tres jugadas que solo existen cuando hablas el último:
+
+1. **Control del bote.** Con mano media pasas detrás y ves el river gratis. Fuera de posición esa mano te cuesta una apuesta más casi siempre.
+2. **Flotar.** Igualas el flop sin nada, y cuando el rival pasa el turn —porque falló— te llevas el bote apostando. Solo funciona en posición: necesitas ver su check antes de decidir.
+3. **Farol de river con blockers.** Ves los tres checks anteriores y apuestas con las cartas que bloquean sus manos buenas. Ese farol es rentable en el botón y suicida en la ciega pequeña.
+
 <Callout tipo="practica">
-Abre el [entrenador de rangos](/herramientas/rangos) y compara la grid de UTG con la del botón. Ver la diferencia de tamaño en pantalla vale más que cualquier explicación.
+Abre el [entrenador de rangos](/herramientas/rangos) y compara la grid de UTG con la del botón. Ver la diferencia de tamaño en pantalla vale más que cualquier explicación. En [la mesa interactiva](/herramientas/mesa) puedes sentarte en cada silla y ver quién habla antes y después de ti.
 </Callout>
