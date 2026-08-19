@@ -28,7 +28,7 @@ const TOOLS = [
   {
     href: "/herramientas/quiz",
     name: "Quiz con repetición",
-    line: "50 preguntas de reglas, desempates y matemáticas. Te repite justo lo que fallas.",
+    line: "Preguntas de reglas, desempates, preflop, postflop y matemáticas. Te repite justo lo que fallas.",
     mark: "♣",
   },
   {

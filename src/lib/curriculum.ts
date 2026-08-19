@@ -86,9 +86,23 @@ export const CURRICULUM: Module[] = [
         practice: { href: "/herramientas/rangos", label: "Entrenador de rangos" },
       },
       {
+        slug: "limpers-e-isolar",
+        title: "Limpers: cómo se castiga al que iguala",
+        summary: "El iso-raise, el tamaño correcto y por qué el limper es tu mejor cliente.",
+        minutes: 7,
+        practice: { href: "/herramientas/rangos", label: "Entrenador de rangos" },
+      },
+      {
         slug: "3-bet",
         title: "3-bet: resubir",
         summary: "Value y farol, tamaños, y por qué resubir gana más que igualar.",
+        minutes: 8,
+        practice: { href: "/herramientas/rangos", label: "Entrenador de rangos" },
+      },
+      {
+        slug: "squeeze-y-4-bet",
+        title: "Squeeze y 4-bet",
+        summary: "Resubir sobre un open con caller, y qué hacer cuando te resuben a ti.",
         minutes: 8,
         practice: { href: "/herramientas/rangos", label: "Entrenador de rangos" },
       },
@@ -163,6 +177,12 @@ export const CURRICULUM: Module[] = [
         minutes: 8,
       },
       {
+        slug: "botes-multiway",
+        title: "Botes multiway",
+        summary: "Tres o más jugadores: menos c-bets, casi ningún farol y otras manos.",
+        minutes: 7,
+      },
+      {
         slug: "turn-y-river",
         title: "Turn y river",
         summary: "Segundo y tercer disparo: cuándo seguir, cuándo frenar y cuándo apostar grande.",
@@ -179,6 +199,13 @@ export const CURRICULUM: Module[] = [
         title: "Elegir el tamaño",
         summary: "1/3, 2/3 o all-in: el tamaño es un mensaje, no un capricho.",
         minutes: 6,
+      },
+      {
+        slug: "spr-y-compromiso",
+        title: "SPR: cuándo tu mano vale un stack",
+        summary: "La división que decide si top pair es un monstruo o una mano media.",
+        minutes: 8,
+        practice: { href: "/herramientas/odds", label: "Calculadora de equity" },
       },
       {
         slug: "mano-comentada",

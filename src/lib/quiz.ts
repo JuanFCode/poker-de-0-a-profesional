@@ -6,7 +6,14 @@
  * matemática básica y las reglas de bankroll.
  */
 
-export type Topic = "Reglas" | "Ranking" | "Posición" | "Matemáticas" | "Preflop" | "Bankroll";
+export type Topic =
+  | "Reglas"
+  | "Ranking"
+  | "Posición"
+  | "Matemáticas"
+  | "Preflop"
+  | "Postflop"
+  | "Bankroll";
 
 export interface Question {
   id: string;
@@ -24,6 +31,7 @@ export const TOPICS: Topic[] = [
   "Posición",
   "Matemáticas",
   "Preflop",
+  "Postflop",
   "Bankroll",
 ];
 
@@ -567,6 +575,147 @@ export const QUESTIONS: Question[] = [
     answer: 1,
     explanation:
       "La decisión se toma en frío: 'me levanto si pierdo X buy-ins o si noto Y'. En caliente nadie decide bien.",
+  },
+  // -------------------------------------------------- Preflop (limpers, squeeze)
+  {
+    id: "pre-iso-tamano",
+    topic: "Preflop",
+    question: "Dos jugadores han limpeado y quieres subir desde el cutoff. ¿De cuánto es la subida?",
+    options: ["2,5bb", "3bb", "5bb", "12bb"],
+    answer: 2,
+    explanation:
+      "La regla es 4bb más 1bb por cada limper extra: con dos limpers, 5bb. Subir 2,5bb les da precio para pagar con cualquier cosa.",
+  },
+  {
+    id: "pre-limp-propio",
+    topic: "Preflop",
+    question: "¿Cuándo es correcto limpear tú el primero?",
+    options: [
+      "Con parejas pequeñas desde posición temprana",
+      "Nunca: si la mano vale para entrar, vale para subir",
+      "Con suited conectores desde las ciegas",
+      "Cuando llevas rato sin jugar una mano",
+    ],
+    answer: 1,
+    explanation:
+      "Limpear renuncia a ganar el bote sin pelea y entra sin definir tu rango. Sube o tírate; el overlimp detrás de otros es la única excepción.",
+  },
+  {
+    id: "pre-squeeze-que-es",
+    topic: "Preflop",
+    question: "¿Qué es un squeeze?",
+    options: [
+      "Resubir sobre un open que ya tiene un caller",
+      "Igualar una subida desde la ciega grande",
+      "Subir all-in con stack corto",
+      "Apostar el flop tras haber subido preflop",
+    ],
+    answer: 0,
+    explanation:
+      "Aprietas al que abrió porque todavía tiene un caller detrás, y ese caller tiene el rango capado: si tuviera una mano premium habría resubido él.",
+  },
+  {
+    id: "pre-squeeze-tamano",
+    topic: "Preflop",
+    question: "Abren a 2,5bb, iguala el botón y quieres squeezear desde la ciega grande. ¿Cuánto?",
+    options: ["6bb", "8bb", "12bb", "25bb"],
+    answer: 2,
+    explanation:
+      "Squeeze desde las ciegas: unas 5 veces el open, más 1x por caller. Un squeeze pequeño le da al que abrió el precio perfecto para pagar en posición.",
+  },
+  {
+    id: "pre-4bet-micro",
+    topic: "Preflop",
+    question: "En micro límites, ¿qué significa casi siempre un 4-bet de un desconocido?",
+    options: [
+      "Un farol con blockers",
+      "A-A, K-K, Q-Q o A-K",
+      "Cualquier pareja",
+      "Un as suited cualquiera",
+    ],
+    answer: 1,
+    explanation:
+      "En límites bajos el 4-bet es valor puro. Tirar A-Q o J-J contra un desconocido que te resube no es cobardía: es la jugada que gana dinero.",
+  },
+  // ---------------------------------------------------------------- Postflop
+  {
+    id: "post-spr-que-es",
+    topic: "Postflop",
+    question: "¿Qué mide el SPR?",
+    options: [
+      "El stack efectivo dividido por el bote al empezar el flop",
+      "Las apuestas que quedan hasta el river",
+      "El porcentaje de manos que abres",
+      "La equity de tu mano contra un rango",
+    ],
+    answer: 0,
+    explanation:
+      "SPR = stack efectivo ÷ bote. Con SPR bajo (0-3) top pair vale un stack entero; con SPR alto (14+) hace falta trío o mejor.",
+  },
+  {
+    id: "post-spr-compromiso",
+    topic: "Postflop",
+    question: "Bote de 20bb en el flop y 60bb detrás. ¿Qué SPR hay y qué implica?",
+    options: [
+      "SPR 3: con overpair o top pair fuerte se juega el stack",
+      "SPR 3: hace falta trío como mínimo",
+      "SPR 12: se juega por el bote, no por la pila",
+      "No se puede calcular sin saber las cartas",
+    ],
+    answer: 0,
+    explanation:
+      "60 ÷ 20 = 3. Con SPR de 0 a 3 estás comprometido: una pareja alta con buen kicker ya vale el stack entero.",
+  },
+  {
+    id: "post-set-mining",
+    topic: "Postflop",
+    question: "¿Cuánto stack efectivo necesitas para pagar una subida buscando trío con una pareja pequeña?",
+    options: ["5 veces lo que pagas", "10 veces", "15 veces o más", "Da igual el stack"],
+    answer: 2,
+    explanation:
+      "Ligas trío el 12% de las veces, así que necesitas cobrar mucho cuando aciertas: al menos 15 veces lo que pagas en stack efectivo.",
+  },
+  {
+    id: "post-multiway-cbet",
+    topic: "Postflop",
+    question: "¿Cómo cambia tu c-bet en un bote con tres rivales?",
+    options: [
+      "Igual que en heads-up",
+      "Apuestas más a menudo para que se retiren",
+      "Apuestas mucho menos: solo valor claro y proyectos fuertes",
+      "Apuestas siempre pequeño con todo tu rango",
+    ],
+    answer: 2,
+    explanation:
+      "Contra tres rangos a la vez el farol casi no funciona: todos tienen que tirarse. Se apuesta con manos que quieren acción y con proyectos fuertes.",
+  },
+  {
+    id: "post-multiway-manos",
+    topic: "Postflop",
+    question: "¿Qué manos ganan valor cuando la mesa juega muchos botes multiway?",
+    options: [
+      "Ases con kicker flojo y broadways offsuit",
+      "Parejas, suited conectores y suited aces",
+      "Cualquier carta alta",
+      "Las mismas que en heads-up",
+    ],
+    answer: 1,
+    explanation:
+      "Multiway gana el que liga mano hecha, no el que liga pareja. Las manos que buscan trío, color o escalera suben de valor; K-J o A-8o bajan.",
+  },
+  {
+    id: "post-multiway-lectura",
+    topic: "Postflop",
+    question: "Dos jugadores pasan y el tercero apuesta en un bote multiway. ¿Qué significa?",
+    options: [
+      "Suele ser un farol: hay demasiada gente",
+      "Es un rango fuerte y real: nadie roba contra tres",
+      "Siempre es un proyecto",
+      "No aporta ninguna información",
+    ],
+    answer: 1,
+    explanation:
+      "Apostar con tres jugadores en el bote exige una mano de verdad. Esa apuesta se respeta mucho más que la misma apuesta en heads-up.",
   },
 ];
 

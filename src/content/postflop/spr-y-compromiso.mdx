@@ -1,0 +1,57 @@
+Antes de decidir nada en el flop hay una cuenta que te dice cuánto vale tu mano: el **SPR**, la relación entre el stack que queda y el bote. Con la misma pareja de ases puedes estar obligado a meterlo todo o obligado a frenar, y la diferencia no está en las cartas: está en esa división.
+
+## Cómo se calcula
+
+> SPR = stack efectivo ÷ bote, medido al empezar el flop.
+
+**Stack efectivo** es el menor de los dos stacks: no puedes ganar ni perder más de lo que tiene el rival más corto.
+
+Ejemplo: bote de 6bb en el flop, los dos tenéis 100bb detrás. SPR = 100 ÷ 6 ≈ **17**. Bote de 20bb (hubo 3-bet) con 90bb detrás: SPR = **4,5**.
+
+## Qué mano vale un stack según el SPR
+
+| SPR | Qué necesitas para meterlo todo | Situación típica |
+| --- | --- | --- |
+| **0-3** | Pareja alta con buen kicker, overpair | Bote 3-bet o 4-bet, stacks cortos |
+| **4-6** | Overpair fuerte, dos pares, trío | Bote 3-bet normal |
+| **7-13** | Dos pares buenos, trío, proyecto fuerte | Bote de open-raise con un caller |
+| **14+** | Trío para arriba, o proyecto con implícitas | Bote limpeado o multiway |
+
+Traducido: con SPR 2, top pair es un monstruo y se juega el stack sin dudar. Con SPR 20, top pair es una mano media que quiere un bote pequeño, y meter el stack con ella es la forma más rápida de perderlo.
+
+<Callout tipo="clave">
+No es "¿tengo buena mano?", es "¿tengo buena mano **para este bote**?". La misma A-K en A-8-3 vale un stack entero en un bote 3-bet y solo una o dos apuestas en un bote limpeado profundo.
+</Callout>
+
+## El SPR lo eliges tú, preflop
+
+Aquí está lo que casi nadie ve: el tamaño preflop decide el SPR del flop, así que decides el tipo de bote **antes** de ver una carta.
+
+- **Quieres SPR bajo** con manos que ya son fuertes y no mejoran: A-A, K-K, A-K. Resube, hincha el bote, y en el flop cualquier acierto te compromete.
+- **Quieres SPR alto** con manos que necesitan ligar algo enorme: parejas pequeñas, suited conectores. Entra barato y busca el bote grande solo cuando ligues.
+
+Por eso igualar un 3-bet con 5-5 y 40bb efectivos es malo y con 150bb es bueno: es la misma mano, pero el SPR resultante convierte una en fuga y otra en jugada.
+
+## Set mining: la regla de las 15 veces
+
+Pagar una subida con una pareja pequeña buscando trío necesita dinero detrás para cobrar cuando aciertes. Ligas trío una de cada ocho veces (12%), así que:
+
+> Necesitas al menos **15 veces** lo que pagas en stack efectivo.
+
+Si te suben a 3bb, quieres 45bb o más detrás. Con 25bb detrás, pagar con 3-3 pierde dinero aunque ligues: no hay stack suficiente que cobrar.
+
+<Callout tipo="error">
+Comprometerse a medias. Meter media pila en el flop y luego tirarse en el turn es lo peor de las dos opciones. Si el SPR dice que la mano vale un stack, se va con todo; si dice que no, se pasa y se controla el bote.
+</Callout>
+
+## La pregunta que se hace en la mesa
+
+Cuando llegue el flop, antes de mirar tus outs:
+
+1. ¿Cuánto hay en el bote?
+2. ¿Cuánto queda del stack más corto?
+3. Divide. ¿Sale menos de 5? Estás jugando por el stack. ¿Sale más de 10? Estás jugando por el bote, no por la pila.
+
+<Callout tipo="practica">
+En [la calculadora de odds](/herramientas/odds) monta un flop con top pair y compara tu equity contra un rango fuerte y contra uno ancho. Esa diferencia es exactamente la que te dice si el SPR bajo te ayuda o te hunde.
+</Callout>

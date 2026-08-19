@@ -15,7 +15,9 @@ export const LESSON_CONTENT: Record<string, () => Promise<{ default: ComponentTy
 
   "preflop/la-posicion-manda": () => import("./preflop/la-posicion-manda.mdx"),
   "preflop/rangos-de-apertura": () => import("./preflop/rangos-de-apertura.mdx"),
+  "preflop/limpers-e-isolar": () => import("./preflop/limpers-e-isolar.mdx"),
   "preflop/3-bet": () => import("./preflop/3-bet.mdx"),
+  "preflop/squeeze-y-4-bet": () => import("./preflop/squeeze-y-4-bet.mdx"),
   "preflop/defender-las-ciegas": () => import("./preflop/defender-las-ciegas.mdx"),
   "preflop/ajustes": () => import("./preflop/ajustes.mdx"),
 
@@ -26,9 +28,11 @@ export const LESSON_CONTENT: Record<string, () => Promise<{ default: ComponentTy
 
   "postflop/leer-el-flop": () => import("./postflop/leer-el-flop.mdx"),
   "postflop/c-bet": () => import("./postflop/c-bet.mdx"),
+  "postflop/botes-multiway": () => import("./postflop/botes-multiway.mdx"),
   "postflop/turn-y-river": () => import("./postflop/turn-y-river.mdx"),
   "postflop/bluffs-y-blockers": () => import("./postflop/bluffs-y-blockers.mdx"),
   "postflop/tamanos": () => import("./postflop/tamanos.mdx"),
+  "postflop/spr-y-compromiso": () => import("./postflop/spr-y-compromiso.mdx"),
   "postflop/mano-comentada": () => import("./postflop/mano-comentada.mdx"),
 
   "bankroll/gestion-de-bankroll": () => import("./bankroll/gestion-de-bankroll.mdx"),
