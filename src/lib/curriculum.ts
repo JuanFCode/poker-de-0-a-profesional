@@ -86,6 +86,20 @@ export const CURRICULUM: Module[] = [
         practice: { href: "/herramientas/rangos", label: "Entrenador de rangos" },
       },
       {
+        slug: "suited-vs-offsuit",
+        title: "Suited manda",
+        summary: "Por qué K-8s se abre desde UTG y K-8o no se abre ni desde el botón.",
+        minutes: 6,
+        practice: { href: "/herramientas/rangos", label: "Entrenador de rangos" },
+      },
+      {
+        slug: "cuando-ya-han-subido",
+        title: "Cuando ya han subido",
+        summary: "Resubir, igualar o tirar: la decisión que aparece en cuatro manos de cada cinco.",
+        minutes: 9,
+        practice: { href: "/herramientas/rangos", label: "Entrenador de rangos" },
+      },
+      {
         slug: "limpers-e-isolar",
         title: "Limpers: cómo se castiga al que iguala",
         summary: "El iso-raise, el tamaño correcto y por qué el limper es tu mejor cliente.",
@@ -259,6 +273,12 @@ export const CURRICULUM: Module[] = [
     goal: "Elegir dónde juegas, medir si ganas y saber cuánto ganas por hora.",
     duration: "Continuo",
     lessons: [
+      {
+        slug: "el-rastrillo",
+        title: "El rastrillo",
+        summary: "Lo que la casa se lleva de cada bote, y cómo cierra tus rangos sin que lo notes.",
+        minutes: 8,
+      },
       {
         slug: "seleccion-de-mesa",
         title: "Selección de mesa y formato",

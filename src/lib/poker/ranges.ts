@@ -15,7 +15,12 @@ import { expandRange, rangePercent, type HandCode } from "./notation";
 export const POSITIONS = ["UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO", "BTN", "SB", "BB"] as const;
 export type Position = (typeof POSITIONS)[number];
 
-export type Action = "raise" | "3bet" | "call" | "fold";
+/**
+ * Las acciones que puede pedir una casilla de la grid.
+ * `extra` no es una acción de mesa: marca las manos que solo se añaden cuando
+ * la mesa es floja (ver `EXPLOIT_ADD` en `preflop-tree.ts`).
+ */
+export type Action = "raise" | "3bet" | "4bet" | "allin" | "call" | "extra" | "fold";
 
 export interface PositionInfo {
   position: Position;

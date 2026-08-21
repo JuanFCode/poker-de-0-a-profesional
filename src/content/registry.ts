@@ -15,6 +15,8 @@ export const LESSON_CONTENT: Record<string, () => Promise<{ default: ComponentTy
 
   "preflop/la-posicion-manda": () => import("./preflop/la-posicion-manda.mdx"),
   "preflop/rangos-de-apertura": () => import("./preflop/rangos-de-apertura.mdx"),
+  "preflop/suited-vs-offsuit": () => import("./preflop/suited-vs-offsuit.mdx"),
+  "preflop/cuando-ya-han-subido": () => import("./preflop/cuando-ya-han-subido.mdx"),
   "preflop/limpers-e-isolar": () => import("./preflop/limpers-e-isolar.mdx"),
   "preflop/3-bet": () => import("./preflop/3-bet.mdx"),
   "preflop/squeeze-y-4-bet": () => import("./preflop/squeeze-y-4-bet.mdx"),
@@ -40,6 +42,7 @@ export const LESSON_CONTENT: Record<string, () => Promise<{ default: ComponentTy
   "bankroll/tilt": () => import("./bankroll/tilt.mdx"),
   "bankroll/rutina-de-estudio": () => import("./bankroll/rutina-de-estudio.mdx"),
 
+  "profesional/el-rastrillo": () => import("./profesional/el-rastrillo.mdx"),
   "profesional/seleccion-de-mesa": () => import("./profesional/seleccion-de-mesa.mdx"),
   "profesional/medir-tu-juego": () => import("./profesional/medir-tu-juego.mdx"),
   "profesional/gto-vs-explotativo": () => import("./profesional/gto-vs-explotativo.mdx"),

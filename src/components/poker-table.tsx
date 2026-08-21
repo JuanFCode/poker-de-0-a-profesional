@@ -31,11 +31,14 @@ function badgeFor(position: Position, size: TableSize): string | null {
 export function PokerTable({
   size,
   hero,
+  raiser = null,
   onSelect,
   className = "",
 }: {
   size: TableSize;
   hero: Position;
+  /** La silla del rival que ha metido dinero: se marca con su propio aro. */
+  raiser?: Position | null;
   onSelect?: (position: Position) => void;
   className?: string;
 }) {
@@ -65,6 +68,7 @@ export function PokerTable({
         const label = aliasFor(seat.position, size) ?? seat.position;
         const badge = badgeFor(seat.position, size);
         const Tag = onSelect ? "button" : "div";
+        const isRaiser = !seat.isHero && seat.position === raiser;
 
         return (
           <Tag
@@ -81,12 +85,19 @@ export function PokerTable({
             className={`absolute w-[19%] min-w-[52px] -translate-x-1/2 -translate-y-1/2 rounded-lg border px-1 py-1.5 text-center transition-all ${
               seat.isHero
                 ? "z-10 scale-110 border-brass-400 bg-brass-500 text-felt-950 shadow-[0_0_0_3px_rgba(201,162,39,0.18)]"
-                : `${ZONE_STYLE[info.zone]} ${onSelect ? "hover:scale-105 hover:border-brass-400/80" : ""}`
+                : isRaiser
+                  ? "z-10 border-action-3bet bg-action-3bet/20 text-cream shadow-[0_0_0_3px_rgba(194,69,63,0.18)]"
+                  : `${ZONE_STYLE[info.zone]} ${onSelect ? "hover:scale-105 hover:border-brass-400/80" : ""}`
             }`}
           >
             {seat.isHero && (
               <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-felt-950 px-1.5 font-mono text-[8px] tracking-[0.16em] text-brass-300 uppercase">
                 Tú
+              </span>
+            )}
+            {isRaiser && (
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-felt-950 px-1.5 font-mono text-[8px] tracking-[0.16em] text-action-3bet uppercase">
+                Sube
               </span>
             )}
             <span className="block font-mono text-[10px] leading-tight tracking-tight sm:text-[11px]">

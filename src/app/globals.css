@@ -27,6 +27,9 @@
   --color-action-raise: #d9a441;
   --color-action-3bet: #c2453f;
   --color-action-call: #4f9d6b;
+  --color-action-4bet: #9b2f6e;
+  --color-action-allin: #e8613a;
+  --color-action-extra: #7a5f24;
   --color-action-fold: #2a3730;
 
   --font-display: var(--font-bodoni), "Didot", Georgia, serif;

@@ -6,14 +6,20 @@ import type { Action } from "@/lib/poker/ranges";
 const ACTION_STYLE: Record<Action, string> = {
   raise: "bg-action-raise/85 text-felt-950",
   "3bet": "bg-action-3bet/85 text-cream",
+  "4bet": "bg-action-4bet/85 text-cream",
+  allin: "bg-action-allin/90 text-felt-950",
   call: "bg-action-call/80 text-felt-950",
+  extra: "bg-action-extra/80 text-cream-dim",
   fold: "bg-action-fold/60 text-cream-faint",
 };
 
 export const ACTION_LABEL: Record<Action, string> = {
   raise: "Subir",
   "3bet": "3-bet",
+  "4bet": "4-bet",
+  allin: "All-in",
   call: "Igualar",
+  extra: "Si la mesa es floja",
   fold: "Tirar",
 };
 

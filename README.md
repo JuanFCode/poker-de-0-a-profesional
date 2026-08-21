@@ -6,22 +6,24 @@ y cuatro herramientas para practicar. Todo en español y sin backend.
 
 ## Qué incluye
 
-**Curso — 28 lecciones en 6 fases**
+**Curso — 35 lecciones en 6 fases**
 
 | Fase | Tema |
 | --- | --- |
 | 0 | Las reglas: cómo se juega, ranking de manos y desempates, posiciones, errores de principiante |
-| 1 | Preflop: posición, rangos de apertura, 3-bet, defensa de ciegas, ajustes |
+| 1 | Preflop: posición, rangos de apertura, suited vs offsuit, responder a una subida, limpers e iso-raise, 3-bet, squeeze y 4-bet, defensa de ciegas, ajustes |
 | 2 | Matemáticas: pot odds, outs, equity contra rangos, EV, frecuencias y MDF |
-| 3 | Postflop: texturas, c-bet, turn y river, faroles y blockers, tamaños, una mano comentada |
+| 3 | Postflop: texturas, c-bet, botes multiway, turn y river, faroles y blockers, tamaños, SPR, una mano comentada |
 | 4 | Bankroll y cabeza: gestión, varianza, tilt, rutina de estudio |
-| 5 | Profesional: selección de mesa, medir tu juego, GTO vs explotativo, el poker como negocio, plan de 12 semanas |
+| 5 | Profesional: el rastrillo, selección de mesa, medir tu juego, GTO vs explotativo, el poker como negocio, plan de 12 semanas |
 
 **Herramientas**
 
-- **Entrenador de rangos** — grid 13×13 por posición (apertura y 3-bet) y modo test con precisión por silla.
+- **Entrenador de rangos** — grid 13×13 por posición con el árbol preflop entero: abrir el bote, responder a
+  una subida, aguantar un 3-bet y decidir contra un 4-bet. Incluye los añadidos explotativos como capa aparte
+  y un modo test que mide la precisión por escenario.
 - **Odds y equity** — pot odds, outs con la regla del 2 y el 4, y Monte Carlo mano contra mano o contra un rango (en Web Worker).
-- **Quiz** — 50 preguntas con repetición espaciada (cajas de Leitner).
+- **Quiz** — 72 preguntas con repetición espaciada (cajas de Leitner).
 - **Tracker de bankroll** — sesiones, curva de resultados, bb/100, €/hora y semáforo de bankroll por formato.
 
 Todo el progreso se guarda en `localStorage`: no hay cuentas, ni servidor, ni datos que salgan del navegador.
@@ -35,7 +37,7 @@ El evaluador de manos, el Monte Carlo y los gráficos están escritos a mano, si
 src/
   app/                    páginas (curso, ruta, herramientas)
   components/             UI compartida (grid de manos, cartas, gráfico, callouts)
-  content/                las 28 lecciones en .mdx + su registro
+  content/                las 35 lecciones en .mdx + su registro
   lib/
     poker/                evaluador, equity, odds, rangos, notación (+ tests)
     curriculum.ts         temario: navegación, progreso y rutas estáticas
@@ -48,7 +50,7 @@ public/descargas/         los PDF originales de PokerStars
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm test         # 97 tests del motor de poker y la lógica de la app
+npm test         # 150 tests del motor de poker y la lógica de la app
 npm run build    # build de producción
 ```
 
@@ -63,6 +65,11 @@ Los rangos preflop parten de la guía de open-raise de PokerStars incluida en `a
 los estándares de 9-max de la literatura: *The Grinder's Manual* (Peter Clarke), *Modern Poker Theory*
 (Acevedo), *The Theory of Poker* (Sklansky), *Applications of NLHE* (Janda) y *The Mental Game of Poker*
 (Tendler).
+
+El árbol de defensa (responder a una subida, a un 3-bet y a un 4-bet), los tamaños y la parte de cash en
+vivo con rastrillo salen de los charts gratuitos de Jonathan Little en
+[pokercoaching.com/charts](https://pokercoaching.com/charts) y de su repaso en vídeo
+["The NEW Preflop Strategy I Use to Crush $1/$2 & $2/$5 Cash Games"](https://www.youtube.com/watch?v=R-bqI-pRUmc).
 
 ## Aviso
 

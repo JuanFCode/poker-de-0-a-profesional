@@ -717,6 +717,185 @@ export const QUESTIONS: Question[] = [
     explanation:
       "Apostar con tres jugadores en el bote exige una mano de verdad. Esa apuesta se respeta mucho más que la misma apuesta en heads-up.",
   },
+
+  // --------------------------------------- cash en vivo: rastrillo y árbol preflop
+  {
+    id: "pre-rastrillo-rangos",
+    topic: "Preflop",
+    question: "¿Por qué en cash se abre un rango más cerrado que en torneo con los mismos 100bb?",
+    options: [
+      "Porque en cash los rivales juegan mejor",
+      "Porque en torneo hay ante y no sale rastrillo: el bote es mayor y se pelea más",
+      "Porque en cash los stacks son más profundos",
+      "No hay diferencia: el rango correcto es el mismo",
+    ],
+    answer: 1,
+    explanation:
+      "El rango correcto depende de cuánto vale el bote. En torneo hay ante en cada mano y el bote llega entero al ganador; en cash es menor y encima el casino se lleva su parte.",
+  },
+  {
+    id: "pre-k8-suited",
+    topic: "Preflop",
+    question: "K-8 del mismo palo se abre desde UTG y K-8 de distinto palo no se abre ni desde el botón. ¿Por qué?",
+    options: [
+      "Porque suited gana un 4% más de veces en el showdown",
+      "Porque el color añade proyecto: una calle más de farol creíble y la posibilidad de ligar la mano máxima",
+      "Porque las tablas de suited están mal calculadas",
+      "Porque offsuit solo se juega con stacks profundos",
+    ],
+    answer: 1,
+    explanation:
+      "El 4% de equity no justifica la diferencia. Lo que cambia es cuántas formas tienes de ganar el bote: con proyecto de color puedes apostar tres calles; con rey alto no puedes apostar ninguna.",
+  },
+  {
+    id: "pre-dominacion",
+    topic: "Preflop",
+    question: "Abres, te resuben desde posición temprana. ¿Qué mano aguanta mejor, A-10s o 9-8s?",
+    options: [
+      "A-10s: tiene un as y liga escalera",
+      "9-8s: A-10s va dominada por A-K y A-Q",
+      "Las dos igual: tienen equity parecida",
+      "Ninguna: las dos se tiran siempre",
+    ],
+    answer: 1,
+    explanation:
+      "Con A-10s, cuando el flop trae un as ligas la misma pareja que él con peor acompañante: ganas botes pequeños y pagas los grandes. 9-8s no está dominada por nada de su rango.",
+  },
+  {
+    id: "pre-4bet-jj",
+    topic: "Preflop",
+    question: "Abres desde UTG, te resuben desde UTG+1 y llevas J-J. ¿Qué haces?",
+    options: [
+      "4-bet: es una pareja grande",
+      "Igualar y ver el flop",
+      "All-in directamente",
+      "Tirar sin pensarlo",
+    ],
+    answer: 1,
+    explanation:
+      "Su rango para resubir ahí es A-A, K-K, Q-Q y A-K. Contra las parejas vas con un 20% y contra A-K es moneda al aire: no hay ninguna mano contra la que seas favorito. Se iguala y se decide en el flop.",
+  },
+  {
+    id: "pre-blocker-combos",
+    topic: "Matemáticas",
+    question: "Llevas un as en la mano. ¿Cuántas combinaciones de A-A le quedan al rival?",
+    options: ["6", "4", "3", "1"],
+    answer: 2,
+    explanation:
+      "Hay 6 combinaciones de A-A. Tener un as elimina la mitad: le quedan 3. Con A-K pasa parecido, de 16 combinaciones le quedan 12. Por eso los faroles con as bloquean tan bien.",
+  },
+  {
+    id: "pre-open-grande",
+    topic: "Preflop",
+    question: "En tu mesa hay uno que abre a 5bb en vez de a 3bb. ¿Cómo le defiendes?",
+    options: [
+      "Más ancho: está regalando dinero al bote",
+      "Igual que a los demás: el rango no depende del tamaño",
+      "Mucho más cerrado: arriesga mucho para ganar poco y su rango tiene que ser fuerte",
+      "Solo con parejas, siempre",
+    ],
+    answer: 2,
+    explanation:
+      "Es la misma cuenta de las pot odds aplicada antes del flop: te está pidiendo casi el doble para optar a lo mismo. Contra opens de 5bb ni siquiera J-J es un 3-bet automático.",
+  },
+  {
+    id: "pos-sb-tamano",
+    topic: "Posición",
+    question: "Todos se retiran y abres desde la ciega pequeña. ¿Por qué se sube a 4bb en vez de a 3bb?",
+    options: [
+      "Para que el rival pague más cuando ligues",
+      "Porque no te importa que se retire y el bote grande hace que el rastrillo tope antes del flop",
+      "Porque desde las ciegas siempre se sube el doble",
+      "Para disimular el rango",
+    ],
+    answer: 1,
+    explanation:
+      "Ganar el bote ahí mismo es un resultado excelente cuando vas a jugar fuera de posición. Y si el rastrillo ya ha topado preflop, el resto de la mano se juega prácticamente sin comisión.",
+  },
+  {
+    id: "pos-stacks-mesa",
+    topic: "Posición",
+    question: "¿Cómo quieres que estén repartidos los stacks respecto al tuyo?",
+    options: [
+      "Cubrir a los de tu izquierda y que te cubran los de tu derecha",
+      "Cubrir a los de tu derecha y que no te cubran los de tu izquierda",
+      "Ser siempre el stack más corto de la mesa",
+      "Da igual: el stack no depende del asiento",
+    ],
+    answer: 1,
+    explanation:
+      "En no-limit las fichas fluyen hacia la izquierda: ganas dinero de la gente sobre la que tienes posición. Quieres poder cobrarles el bote entero, y no jugar botes profundos contra quien te tiene a ti en desventaja.",
+  },
+  {
+    id: "pre-vs-cerrado",
+    topic: "Preflop",
+    question: "Tu mesa es dura: todos juegan cerrado y bien. ¿Cómo ajustas tu rango de apertura?",
+    options: [
+      "Más ancho: se retiran mucho y puedes robar",
+      "Más cerrado: si nadie paga con manos peores, el final de tu rango deja de ganar dinero",
+      "Igual: los rangos no se ajustan por rival",
+      "Solo abres desde el botón",
+    ],
+    answer: 1,
+    explanation:
+      "Contra rivales cerrados se juega más cerrado, no más ancho. Ampliar contra buenos jugadores es regalarles el terreno donde son mejores que tú: los botes postflop con manos flojas.",
+  },
+  {
+    id: "pre-aislar",
+    topic: "Preflop",
+    question: "Abre un jugador malo desde el botón y en la ciega grande hay un jugador bueno. Estás en la ciega pequeña. ¿Qué buscas?",
+    options: [
+      "Igualar para jugar multiway",
+      "Resubir ancho para que el bueno se retire y quedarte a solas con el malo",
+      "Tirar salvo con las premium",
+      "Resubir solo con A-A y K-K",
+    ],
+    answer: 1,
+    explanation:
+      "El objetivo no es la mano: es con quién te quedas en el bote. Si los dos rivales fueran malos, la respuesta sería la contraria: igualar y jugar el bote multiway contra los dos.",
+  },
+  {
+    id: "reglas-repartir-ciega",
+    topic: "Reglas",
+    question: "La mano queda entre las dos ciegas y la sala permite repartir. ¿Qué suele convenir?",
+    options: [
+      "Jugar siempre: eres mejor jugador",
+      "Repartir salvo que el rival sea claramente peor que tú",
+      "Repartir siempre, sin excepción",
+      "Depende del color de tus cartas",
+    ],
+    answer: 1,
+    explanation:
+      "Si jugáis y llega el flop, el casino se lleva su parte de un bote pequeño. Hace falta bastante ventaja sobre el rival para superar ese peaje, así que por defecto se reparte.",
+  },
+  {
+    id: "pre-4bet-aa-posicion",
+    topic: "Preflop",
+    question: "Resubiste desde el botón y te 4-betean. ¿Por qué se iguala a veces con A-A en vez de meter el stack?",
+    options: [
+      "Para ver si liga color",
+      "Para proteger el rango de igualar: si A-A puede estar dentro, su apuesta del flop nunca es gratis",
+      "Porque A-A juega mal en botes grandes",
+      "Para reducir la varianza de la sesión",
+    ],
+    answer: 1,
+    explanation:
+      "Si siempre metes el stack con A-A y A-K, tu rango de call se queda flojo y te apuesta el flop entero sin miedo. Solo funciona en posición: fuera de posición no hay nada que proteger.",
+  },
+  {
+    id: "post-donk-profundo",
+    topic: "Postflop",
+    question: "Con 100bb, fuera de posición y contra el que subió preflop, ¿conviene apostar tú primero en el flop?",
+    options: [
+      "Sí, para no dar cartas gratis",
+      "Casi nunca: fuera de posición realizas peor tu equity y le das la información gratis",
+      "Sí, siempre que tengas top pair",
+      "Solo con proyecto de color",
+    ],
+    answer: 1,
+    explanation:
+      "Apostar primero (donk bet) es cosa de stacks cortos. Con dinero detrás conviene pasar: así todas tus manos fuertes siguen dentro del rango y cada apuesta suya está en peligro.",
+  },
 ];
 
 export const QUESTION_IDS = QUESTIONS.map((q) => q.id);

@@ -190,7 +190,7 @@ export default function Home() {
           <p className="eyebrow">Cómo usar esto</p>
           <p className="mt-5 max-w-3xl font-display text-2xl leading-snug text-cream md:text-3xl">
             Lee una lección, practica con la herramienta que enlaza al final y juega manos con esa
-            única idea en la cabeza. Repite 28 veces.
+            única idea en la cabeza. Repite {TOTAL_LESSONS} veces.
           </p>
           <p className="mt-6 max-w-2xl text-sm leading-relaxed text-cream-faint">
             Tu progreso, tus estadísticas del entrenador y tus sesiones se guardan solo en este
