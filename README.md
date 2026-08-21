@@ -2,7 +2,7 @@
 
 Web gratuita para aprender Texas Hold'em desde cero hasta jugar con criterio profesional:
 reglas claras y cortas, estrategia preflop y postflop, matemáticas de mesa, gestión de bankroll
-y cuatro herramientas para practicar. Todo en español y sin backend.
+y herramientas para practicar, incluida una mesa jugable. Todo en español y sin backend.
 
 ## Qué incluye
 
@@ -19,6 +19,10 @@ y cuatro herramientas para practicar. Todo en español y sin backend.
 
 **Herramientas**
 
+- **La mesa jugable** (`/juego`) — manos completas de 2 a 9 jugadores contra rivales que juegan
+  con el material del curso: preflop consultan los rangos y el árbol de open / 3-bet / 4-bet, y del
+  flop en adelante comparan su equity con las pot odds. Un entrenador te dice antes de cada
+  decisión qué dice el plan, y después si lo seguiste.
 - **Entrenador de rangos** — grid 13×13 por posición con el árbol preflop entero: abrir el bote, responder a
   una subida, aguantar un 3-bet y decidir contra un 4-bet. Incluye los añadidos explotativos como capa aparte
   y un modo test que mide la precisión por escenario.
@@ -39,7 +43,7 @@ src/
   components/             UI compartida (grid de manos, cartas, gráfico, callouts)
   content/                las 35 lecciones en .mdx + su registro
   lib/
-    poker/                evaluador, equity, odds, rangos, notación (+ tests)
+    poker/                evaluador, equity, odds, rangos, notación, motor de juego y bots (+ tests)
     curriculum.ts         temario: navegación, progreso y rutas estáticas
     quiz.ts  srs.ts  bankroll.ts  storage.ts  progress.ts
 public/descargas/         los PDF originales de PokerStars
@@ -50,7 +54,7 @@ public/descargas/         los PDF originales de PokerStars
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm test         # 150 tests del motor de poker y la lógica de la app
+npm test         # tests del motor de poker, la mesa jugable y la lógica de la app
 npm run build    # build de producción
 ```
 

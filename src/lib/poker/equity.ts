@@ -9,6 +9,7 @@
 import { deckWithout, makeCard, type Card } from "./cards";
 import { evaluate } from "./evaluator";
 import { type HandCode } from "./notation";
+import { createRandom } from "./random";
 import { rankIndex } from "./cards";
 
 export type Opponent =
@@ -61,18 +62,6 @@ export function handCombos(hand: HandCode): [Card, Card][] {
     }
   }
   return combos;
-}
-
-/** xorshift32: rápido y con semilla, para que los tests sean reproducibles. */
-function createRandom(seed: number): () => number {
-  let state = seed >>> 0 || 0x9e3779b9;
-  return () => {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    state >>>= 0;
-    return state / 0x100000000;
-  };
 }
 
 function tally(scores: number[], wins: number[], ties: number[], shares: number[]): void {

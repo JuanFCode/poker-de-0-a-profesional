@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
   rangeTrainer: `${STORAGE_PREFIX}.rangeTrainer`,
   quiz: `${STORAGE_PREFIX}.quiz`,
   bankroll: `${STORAGE_PREFIX}.bankroll`,
+  game: `${STORAGE_PREFIX}.game`,
 } as const;
 
 export function readStored<T>(key: string, fallback: T): T {

@@ -8,6 +8,12 @@ const HERO_CARDS = parseCards("AsKs");
 
 const TOOLS = [
   {
+    href: "/juego",
+    name: "La mesa jugable",
+    line: "Juega manos completas contra rivales que usan los rangos del curso, con un entrenador que explica cada decisión.",
+    mark: "▲",
+  },
+  {
     href: "/herramientas/mesa",
     name: "La mesa y tu silla",
     line: "Mesa interactiva de 2 a 9 jugadores: dónde estás, quién habla después y qué puedes hacer desde ahí.",
@@ -63,8 +69,14 @@ export default function Home() {
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <ContinueButton />
               <Link
-                href="/ruta"
+                href="/juego"
                 className="rounded-full border border-brass-500/30 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-brass-200 transition-colors hover:border-brass-500/60 hover:bg-brass-500/10"
+              >
+                Jugar una mano
+              </Link>
+              <Link
+                href="/ruta"
+                className="font-mono text-[11px] uppercase tracking-[0.16em] text-cream-faint underline-offset-4 transition-colors hover:text-brass-300 hover:underline"
               >
                 Ver la ruta completa
               </Link>
@@ -74,7 +86,7 @@ export default function Home() {
               {[
                 { k: `${TOTAL_LESSONS}`, v: "lecciones" },
                 { k: `~${hours} h`, v: "de lectura" },
-                { k: "5", v: "herramientas" },
+                { k: "6", v: "herramientas" },
                 { k: "12", v: "semanas de plan" },
               ].map((item) => (
                 <div key={item.v}>
@@ -159,7 +171,7 @@ export default function Home() {
         <div className="mt-16">
           <p className="eyebrow">Practicar, no solo leer</p>
           <h2 className="mt-3 max-w-2xl font-display text-4xl leading-tight tracking-tight text-cream">
-            Cinco herramientas que funcionan en tu navegador
+            Seis herramientas que funcionan en tu navegador
           </h2>
         </div>
 

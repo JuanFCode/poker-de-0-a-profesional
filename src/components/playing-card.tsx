@@ -1,6 +1,7 @@
 import { isRedSuit, rankOf, suitOf, RANKS, SUIT_SYMBOLS, type Card } from "@/lib/poker/cards";
 
 const SIZES = {
+  xs: "h-9 w-7 text-[11px]",
   sm: "h-12 w-9 text-[13px]",
   md: "h-16 w-12 text-lg",
   lg: "h-24 w-[4.5rem] text-2xl",
