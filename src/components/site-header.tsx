@@ -14,7 +14,7 @@ interface NavLink {
 }
 
 const PRIMARY: NavLink[] = [
-  { href: "/juego", label: "Jugar", hint: "Mesa contra rivales que usan el curso" },
+  { href: "/", label: "Jugar", hint: "La mesa, con entrenador, rangos y fugas" },
   { href: "/ruta", label: "La ruta", hint: "El temario entero y tu progreso" },
 ];
 

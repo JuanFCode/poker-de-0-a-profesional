@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { GridLegend, HandGrid } from "@/components/hand-grid";
 import { LiveTable } from "@/components/live-table";
 import { PlayingCard } from "@/components/playing-card";
-import { TableSizePicker } from "@/components/table-size-picker";
-import { Stat, ToolShell } from "@/components/tool-shell";
+import { Stat } from "@/components/tool-shell";
 import { botMove } from "@/lib/poker/bot";
-import { advise, matchesAdvice, type Advice } from "@/lib/poker/coach";
+import { advise, bluffRead, matchesAdvice, spotRange, type Advice } from "@/lib/poker/coach";
 import {
   applyAction,
   BIG_BLIND,
@@ -15,6 +16,8 @@ import {
   formatBB,
   isHeroTurn,
   legalMoves,
+  normalizeStats,
+  RAKE,
   revealedSeats,
   startHand,
   STREET_LABEL,
@@ -22,24 +25,47 @@ import {
   type GameState,
   type SessionStats,
 } from "@/lib/poker/game";
-import { type TableSize } from "@/lib/poker/ranges";
+import { classifyLeak, topLeaks, type Leak, type LeakCounts } from "@/lib/poker/leaks";
+import { handCodeOf } from "@/lib/poker/notation";
+import { TABLE_LABELS, TABLE_SIZES, type TableSize } from "@/lib/poker/ranges";
+import { tipFor } from "@/lib/poker/tips";
 import { STORAGE_KEYS, useStoredState } from "@/lib/storage";
 
 /** Milisegundos que tarda cada rival en decidir: lo justo para poder seguirlo. */
 const BOT_DELAY = 700;
 
+/** Paso del deslizador de subida: media ciega grande. */
+const SMALL_STEP = BIG_BLIND / 2;
+
+/** Semilla nueva para cada mesa. Fuera del componente: el render es puro. */
+const randomSeed = (): number => (Math.random() * 0x7fffffff) | 0;
+
+type Tab = "plan" | "rango" | "numeros" | "farol";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "plan", label: "Plan" },
+  { id: "rango", label: "Rango" },
+  { id: "numeros", label: "Números" },
+  { id: "farol", label: "Farol" },
+];
+
 interface Feedback {
   ok: boolean;
   headline: string;
   detail: string;
+  leak: Leak | null;
 }
 
 export function GameTool() {
-  const [stats, setStats] = useStoredState<SessionStats>(STORAGE_KEYS.game, EMPTY_STATS);
+  const [storedStats, setStats] = useStoredState<SessionStats>(STORAGE_KEYS.game, EMPTY_STATS);
+  const [leaks, setLeaks] = useStoredState<LeakCounts>(STORAGE_KEYS.leaks, {});
+  const stats = normalizeStats(storedStats);
   const [size, setSize] = useState<TableSize>(6);
+  const [rake, setRake] = useState(true);
   // Semilla fija en el primer render para que el HTML del servidor y el del
   // cliente coincidan; al repartir se cambia por una de verdad.
   const [state, setState] = useState<GameState>(() => createGame({ size: 6 }));
+  const [tab, setTab] = useState<Tab>("plan");
   const [coachOn, setCoachOn] = useState(true);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [botNote, setBotNote] = useState<string | null>(null);
@@ -49,11 +75,25 @@ export function GameTool() {
   const heroTurn = isHeroTurn(state) && state.result === null;
   const legal = heroTurn ? legalMoves(state, state.heroSeat) : null;
   const hero = state.players[state.heroSeat];
+  const heroHand = hero.cards.length === 2 ? handCodeOf(hero.cards[0], hero.cards[1]) : null;
 
   // El plan del entrenador para la decisión que tienes delante.
   const advice: Advice | null = useMemo(
     () => (heroTurn && hero.cards.length === 2 ? advise(state, state.heroSeat) : null),
     [state, heroTurn, hero.cards.length],
+  );
+  // Las tablas y la cuenta del farol solo se calculan si estás mirando su pestaña.
+  const grid = useMemo(
+    () => (heroTurn && tab === "rango" ? spotRange(state, state.heroSeat) : null),
+    [state, heroTurn, tab],
+  );
+  const bluff = useMemo(
+    () => (heroTurn && tab === "farol" ? bluffRead(state, state.heroSeat) : null),
+    [state, heroTurn, tab],
+  );
+  const tip = useMemo(
+    () => (state.handNumber > 0 ? tipFor(state, state.heroSeat) : null),
+    [state],
   );
 
   // Los rivales van hablando solos.
@@ -87,34 +127,39 @@ export function GameTool() {
       )
     : 0;
 
+  const fresh = (options: { size?: TableSize; rake?: boolean } = {}) =>
+    createGame({
+      size: options.size ?? size,
+      rake: options.rake ?? rake,
+      seed: randomSeed(),
+      stats,
+    });
+
   const deal = () => {
     setFeedback(null);
     setBotNote(null);
     setRaiseOverride(null);
-    const base =
-      state.handNumber === 0 || state.size !== size
-        ? createGame({ size, seed: (Math.random() * 0x7fffffff) | 0, stats })
-        : state;
+    const base = state.handNumber === 0 || state.size !== size || state.rake !== rake ? fresh() : state;
     setState(startHand(base));
   };
 
-  const changeSize = (value: TableSize) => {
-    setSize(value);
+  const restart = (options: { size?: TableSize; rake?: boolean }) => {
+    if (options.size !== undefined) setSize(options.size);
+    if (options.rake !== undefined) setRake(options.rake);
     setFeedback(null);
     setBotNote(null);
     setRaiseOverride(null);
-    setState(createGame({ size: value, seed: (Math.random() * 0x7fffffff) | 0, stats }));
+    setState(fresh(options));
   };
 
   const act = (action: GameAction) => {
     if (!heroTurn) return;
     setRaiseOverride(null);
     if (advice) {
-      setFeedback({
-        ok: matchesAdvice(advice, action),
-        headline: advice.headline,
-        detail: advice.detail,
-      });
+      const ok = matchesAdvice(advice, action);
+      const leak = ok ? null : classifyLeak(state, state.heroSeat, advice, action);
+      if (leak) setLeaks((current) => ({ ...current, [leak.id]: (current[leak.id] ?? 0) + 1 }));
+      setFeedback({ ok, headline: advice.headline, detail: advice.detail, leak });
     }
     setState((current) => applyAction(current, action));
   };
@@ -122,14 +167,26 @@ export function GameTool() {
   const revealed = revealedSeats(state);
   const handLog = state.log.filter((entry) => entry.hand === state.handNumber).slice(-9);
   const netBB = stats.net / BIG_BLIND;
+  const misFugas = topLeaks(leaks);
 
   return (
-    <ToolShell
-      eyebrow="La mesa"
-      title="Juega una mano de verdad"
-      intro="Una mesa completa contra rivales que no improvisan: preflop consultan los mismos rangos del curso y del flop en adelante calculan su equity y sus pot odds. Antes de cada decisión tuya, el entrenador te dice qué dice el plan y por qué."
-    >
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="mx-auto max-w-6xl px-5 py-8 md:py-10">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">La mesa</p>
+          <h1 className="mt-1 font-display text-3xl leading-tight text-cream md:text-4xl">
+            Juega una mano de verdad
+          </h1>
+        </div>
+        <p className="max-w-md text-[13px] leading-relaxed text-cream-faint">
+          Rivales que no improvisan: preflop consultan los rangos del curso y del flop en adelante
+          calculan equity y pot odds. Antes de cada decisión tuya, el entrenador te dice qué dice el
+          plan, con qué rango, con qué números y si aquí se farolea o no.
+        </p>
+      </div>
+      <div className="rule-brass mt-5" />
+
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           <LiveTable state={state} revealed={revealed} />
 
@@ -324,7 +381,45 @@ export function GameTool() {
               </button>
             </div>
 
-            {coachOn && advice ? (
+            {coachOn && (
+              <div
+                role="tablist"
+                aria-label="Qué te enseña el entrenador"
+                className="mt-4 flex gap-1 rounded-full border border-brass-500/15 p-1"
+              >
+                {TABS.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === entry.id}
+                    onClick={() => setTab(entry.id)}
+                    className={`flex-1 rounded-full px-2 py-1.5 font-mono text-[10px] tracking-[0.1em] uppercase transition-colors ${
+                      tab === entry.id
+                        ? "bg-brass-500/15 text-brass-200"
+                        : "text-cream-faint hover:text-brass-300"
+                    }`}
+                  >
+                    {entry.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!coachOn && (
+              <p className="mt-3 text-[14px] leading-relaxed text-cream-faint">
+                Entrenador oculto: juega a ciegas y compara al final de la mano.
+              </p>
+            )}
+
+            {coachOn && !advice && (
+              <p className="mt-4 text-[14px] leading-relaxed text-cream-faint">
+                Cuando te toque hablar aparece aquí el plan: de qué rango sale la decisión, qué
+                equity tienes, qué precio te están poniendo y si este es sitio para farolear.
+              </p>
+            )}
+
+            {coachOn && advice && tab === "plan" && (
               <div className="mt-4">
                 <p className="font-display text-2xl leading-tight text-brass-200">
                   {advice.headline}
@@ -333,15 +428,93 @@ export function GameTool() {
                   {advice.source}
                 </p>
                 <p className="mt-3 text-[14px] leading-relaxed text-cream-dim">{advice.detail}</p>
+              </div>
+            )}
+
+            {coachOn && advice && tab === "numeros" && (
+              <ul className="mt-4 space-y-2.5">
+                {advice.numbers.map((entry) => (
+                  <li key={entry.label} className="border-t border-brass-500/10 pt-2.5">
+                    <p className="font-mono text-[9px] tracking-[0.18em] text-cream-faint uppercase">
+                      {entry.label}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[13px] break-words text-cream">
+                      {entry.value}
+                    </p>
+                    {entry.hint && (
+                      <p className="mt-0.5 text-xs leading-snug text-cream-faint">{entry.hint}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {coachOn && advice && tab === "rango" && (
+              <div className="mt-4">
+                {grid ? (
+                  <>
+                    <p className="font-mono text-[10px] tracking-[0.12em] text-cream-faint uppercase">
+                      {grid.label}
+                    </p>
+                    <div className="mt-3">
+                      <HandGrid actionFor={grid.actionFor} highlight={heroHand} />
+                    </div>
+                    <GridLegend actions={grid.legend} />
+                    {grid.notation && (
+                      <p className="mt-3 font-mono text-[11px] leading-relaxed break-words text-cream-faint">
+                        {grid.notation}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-[14px] leading-relaxed text-cream-faint">
+                    Del flop en adelante no hay tabla que valga: la decisión sale de tu equity
+                    contra los que siguen y del precio que te ponen. Míralo en Números.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {coachOn && advice && tab === "farol" && bluff && (
+              <div className="mt-4">
+                <p
+                  className={`font-display text-2xl leading-tight ${
+                    bluff.verdict === "farol"
+                      ? "text-action-raise"
+                      : bluff.verdict === "valor"
+                        ? "text-action-call"
+                        : "text-cream-dim"
+                  }`}
+                >
+                  {bluff.headline}
+                </p>
+                <p className="mt-3 text-[14px] leading-relaxed text-cream-dim">{bluff.detail}</p>
+
+                {bluff.blockers.length > 0 && (
+                  <ul className="mt-4 space-y-1.5 border-t border-brass-500/10 pt-3">
+                    {bluff.blockers.map((line) => (
+                      <li key={line} className="text-xs leading-relaxed text-brass-300">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {bluff.reads.length > 0 && (
+                  <ul className="mt-3 space-y-1.5">
+                    {bluff.reads.map((line) => (
+                      <li key={line} className="text-xs leading-relaxed text-cream-faint">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <ul className="mt-4 space-y-2.5">
-                  {advice.numbers.map((entry) => (
+                  {bluff.numbers.map((entry) => (
                     <li key={entry.label} className="border-t border-brass-500/10 pt-2.5">
                       <p className="font-mono text-[9px] tracking-[0.18em] text-cream-faint uppercase">
                         {entry.label}
                       </p>
-                      <p className="mt-0.5 font-mono text-[13px] break-words text-cream">
-                        {entry.value}
-                      </p>
+                      <p className="mt-0.5 font-mono text-[13px] text-cream">{entry.value}</p>
                       {entry.hint && (
                         <p className="mt-0.5 text-xs leading-snug text-cream-faint">{entry.hint}</p>
                       )}
@@ -349,12 +522,6 @@ export function GameTool() {
                   ))}
                 </ul>
               </div>
-            ) : (
-              <p className="mt-3 text-[14px] leading-relaxed text-cream-faint">
-                {coachOn
-                  ? "Cuando te toque hablar aparece aquí el plan: de qué rango sale la decisión, qué equity tienes y qué precio te están poniendo."
-                  : "Entrenador oculto: juega a ciegas y compara al final de la mano."}
-              </p>
             )}
 
             {feedback && (
@@ -371,9 +538,81 @@ export function GameTool() {
                 <p className="mt-1.5 text-[13px] leading-relaxed text-cream-dim">
                   {feedback.detail}
                 </p>
+                {feedback.leak && (
+                  <div className="mt-3 border-t border-suit-red/20 pt-2.5">
+                    <p className="font-mono text-[10px] tracking-[0.14em] text-suit-red uppercase">
+                      {feedback.leak.title}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-cream-dim">
+                      {feedback.leak.fix}
+                    </p>
+                    <Link
+                      href={feedback.leak.lesson}
+                      className="mt-1.5 inline-block font-mono text-[11px] text-brass-300 underline-offset-4 hover:underline"
+                    >
+                      Estudiarlo · {feedback.leak.lessonLabel} →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+          {/* ------------------------------------------------------ fugas */}
+          <div className="surface rounded-2xl p-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="eyebrow">Tus fugas</p>
+              {misFugas.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setLeaks({})}
+                  className="font-mono text-[10px] tracking-[0.14em] text-cream-faint uppercase hover:text-brass-300"
+                >
+                  Borrar
+                </button>
+              )}
+            </div>
+            {misFugas.length === 0 ? (
+              <p className="mt-3 text-[13px] leading-relaxed text-cream-faint">
+                Aquí se van juntando los errores que repites. No cuenta cada mano jugada distinto:
+                solo las desviaciones que tienen nombre y arreglo.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {misFugas.map((leak) => (
+                  <li key={leak.id} className="border-t border-brass-500/10 pt-2.5">
+                    <p className="text-[13px] leading-snug text-cream">
+                      {leak.title}
+                      <span className="ml-2 font-mono text-[11px] text-suit-red">×{leak.count}</span>
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-cream-faint">{leak.fix}</p>
+                    <Link
+                      href={leak.lesson}
+                      className="mt-1 inline-block font-mono text-[11px] text-brass-300 underline-offset-4 hover:underline"
+                    >
+                      {leak.lessonLabel} →
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* ------------------------------------------------------ consejo */}
+          {tip && (
+            <div className="rounded-2xl border border-brass-500/20 bg-brass-500/[0.06] p-5">
+              <p className="eyebrow">Consejo de mesa</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-cream-dim">{tip.text}</p>
+              {tip.lesson && (
+                <Link
+                  href={tip.lesson}
+                  className="mt-2 inline-block font-mono text-[11px] text-brass-300 underline-offset-4 hover:underline"
+                >
+                  Verlo entero →
+                </Link>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2.5">
             <Stat label="Manos" value={String(stats.hands)} />
@@ -386,24 +625,68 @@ export function GameTool() {
               value={`${netBB >= 0 ? "+" : "−"}${Math.abs(netBB).toFixed(1)}bb`}
               tone={netBB >= 0 ? "good" : "bad"}
             />
-            <Stat label="Bote mayor" value={formatBB(stats.biggestPot)} />
+            <Stat
+              label="Rastrillo"
+              value={`${(stats.rakePaid / BIG_BLIND).toFixed(1)}bb`}
+              hint="lo que se ha llevado la casa"
+            />
           </div>
 
-          <TableSizePicker size={size} onChange={changeSize} />
+          {/* ------------------------------------------------------ mesa */}
+          <div className="surface rounded-xl p-5">
+            <p className="eyebrow">La mesa</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {TABLE_SIZES.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => restart({ size: value })}
+                  aria-pressed={size === value}
+                  title={TABLE_LABELS[value]}
+                  className={`h-9 w-9 rounded-full border font-mono text-[12px] transition-colors ${
+                    size === value
+                      ? "border-brass-400 bg-brass-500/15 text-brass-200"
+                      : "border-brass-500/20 text-cream-faint hover:border-brass-500/50"
+                  }`}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
 
-          <p className="text-xs leading-relaxed text-cream-faint">
-            Fichas de mentira y sin rastrillo: esto sirve para practicar decisiones, no para medir
-            cuánto ganarías. Las manos se reparten al azar y la sesión se guarda solo en tu
-            navegador.
-          </p>
+            <button
+              type="button"
+              onClick={() => restart({ rake: !rake })}
+              aria-pressed={rake}
+              className="mt-4 flex w-full items-center justify-between gap-3 rounded-lg border border-brass-500/20 px-3 py-2.5 text-left transition-colors hover:border-brass-500/50"
+            >
+              <span>
+                <span className="block font-mono text-[11px] tracking-[0.12em] text-cream-dim uppercase">
+                  Rastrillo
+                </span>
+                <span className="mt-0.5 block text-xs leading-snug text-cream-faint">
+                  {RAKE.percent * 100}% del bote, tope {RAKE.capBB}bb, solo si hay flop
+                </span>
+              </span>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] uppercase ${
+                  rake ? "bg-brass-500/20 text-brass-200" : "bg-felt-800 text-cream-faint"
+                }`}
+              >
+                {rake ? "Sí" : "No"}
+              </span>
+            </button>
+            <p className="mt-3 text-xs leading-relaxed text-cream-faint">
+              Cambiar de mesa o de rastrillo reparte de nuevo. Las fichas son de mentira: esto sirve
+              para practicar decisiones, no para medir cuánto ganarías. La sesión se guarda solo en
+              tu navegador.
+            </p>
+          </div>
         </aside>
       </div>
-    </ToolShell>
+    </div>
   );
 }
-
-/** Paso del deslizador de subida: media ciega grande. */
-const SMALL_STEP = BIG_BLIND / 2;
 
 function ActionButton({
   children,

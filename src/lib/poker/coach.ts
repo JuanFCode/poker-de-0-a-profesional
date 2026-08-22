@@ -10,14 +10,30 @@
  * que sirve para algo.
  */
 
+import { RANKS, rankOf, SUIT_NAMES, suitOf, type Card } from "./cards";
 import { describe as describeHand, evaluate } from "./evaluator";
 import {
+  BIG_BLIND,
   formatBB,
   legalMoves,
   type GameAction,
   type GameState,
 } from "./game";
-import { preflopPlan, quickEquity, rivalsOf } from "./bot";
+import { foldedToBlinds, preflopPlan, quickEquity, rivalsOf } from "./bot";
+import { type HandCode } from "./notation";
+import {
+  actionSBUnopened,
+  actionSBvsBBRaise,
+  actionVs3Bet,
+  actionVs4Bet,
+  actionVsOpen,
+  defenseFor,
+  exploitAddFor,
+  responseTo3Bet,
+  responseTo4Bet,
+  SB_UNOPENED,
+  SB_VS_BB_RAISE,
+} from "./preflop-tree";
 import {
   breakevenBluff,
   callEV,
@@ -27,7 +43,13 @@ import {
   potOddsRatio,
   requiredEquity,
 } from "./odds";
-import { percentFor } from "./ranges";
+import {
+  notationFor,
+  percentFor,
+  rangeFor,
+  referenceSeat,
+  type Action,
+} from "./ranges";
 
 export interface AdviceNumber {
   label: string;
@@ -44,6 +66,8 @@ export interface Advice {
   /** El porqué, en una o dos frases del curso. */
   detail: string;
   numbers: AdviceNumber[];
+  /** Equity simulada en el momento de la decisión. Preflop no se calcula. */
+  equity?: number;
 }
 
 const actionKey = (action: GameAction): string =>
@@ -182,6 +206,7 @@ function advisePostflop(state: GameState, seat: number): Advice {
         detail:
           "Vas muy por delante del rango que apuesta: aquí no se paga, se sube. Igualar deja fuera el dinero que puedes cobrar en las calles que quedan.",
         numbers,
+        equity,
       };
     }
 
@@ -195,6 +220,7 @@ function advisePostflop(state: GameState, seat: number): Advice {
           0,
         )}. Igualar es rentable aunque pierdas la mano muchas veces.`,
         numbers,
+        equity,
       };
     }
 
@@ -203,6 +229,7 @@ function advisePostflop(state: GameState, seat: number): Advice {
       headline: "Tírala",
       action: { type: "fold" },
       source,
+      equity,
       detail:
         state.street === "river" || !Number.isFinite(implied)
           ? `Te falta equity: ${formatPercent(equity, 0)} contra ${formatPercent(needed, 0)} que pide el precio.`
@@ -232,6 +259,7 @@ function advisePostflop(state: GameState, seat: number): Advice {
       detail:
         "Tienes la mejor mano la mayoría de las veces: se apuesta por valor. Pasar aquí regala la calle y deja que ligue gratis.",
       numbers,
+      equity,
     };
   }
 
@@ -244,5 +272,309 @@ function advisePostflop(state: GameState, seat: number): Advice {
         ? "Poca equity y sin iniciativa: pasar mantiene el bote pequeño con una mano que no quiere botes grandes."
         : "Mano media: apostar solo la paga lo que te gana. Se pasa y se decide en la siguiente calle.",
     numbers,
+    equity,
+  };
+}
+
+/* ------------------------------------------------------------------ faroles */
+
+export type BluffVerdict = "farol" | "valor" | "no";
+
+export interface BluffRead {
+  verdict: BluffVerdict;
+  /** Dos palabras: "Aquí se farolea", "Aquí se cobra", "Aquí no se miente". */
+  headline: string;
+  detail: string;
+  /** Lo que tu mano le quita al rival. */
+  blockers: string[];
+  /** Lo que has visto de los que siguen en la mano. */
+  reads: string[];
+  numbers: AdviceNumber[];
+}
+
+/** El palo que puede hacer color en el board, si hay tres o más. */
+function flushSuitOnBoard(board: readonly Card[]): number | null {
+  const counts = [0, 0, 0, 0];
+  for (const card of board) counts[suitOf(card)] += 1;
+  const suit = counts.findIndex((count) => count >= 3);
+  return suit === -1 ? null : suit;
+}
+
+/** Lo que tu mano le quita al rango del rival. */
+function blockersOf(cards: readonly Card[], board: readonly Card[]): string[] {
+  const out: string[] = [];
+  const ranks = cards.map(rankOf);
+
+  if (board.length === 0) {
+    if (ranks.includes(12)) {
+      out.push(
+        "Llevas un as: le quitas la mitad de las combinaciones de A-A y un cuarto de las de A-K.",
+      );
+    }
+    if (ranks.includes(11)) out.push("Llevas un rey: le quitas la mitad de las K-K.");
+    return out;
+  }
+
+  const suit = flushSuitOnBoard(board);
+  if (suit !== null) {
+    const mine = cards.filter((card) => suitOf(card) === suit);
+    const nut = mine.find((card) => rankOf(card) === 12);
+    if (nut) {
+      out.push(
+        `Tienes el as de ${SUIT_NAMES[suit].toLowerCase()}: el color máximo no lo puede tener nadie más que tú.`,
+      );
+    } else if (mine.length > 0) {
+      out.push(
+        `Tienes una carta de ${SUIT_NAMES[suit].toLowerCase()}: hay menos colores posibles en su rango.`,
+      );
+    }
+  }
+
+  const topBoard = Math.max(...board.map(rankOf));
+  if (ranks.includes(topBoard)) {
+    out.push(`Llevas un ${RANKS[topBoard]}: le quitas parte de la pareja máxima.`);
+  }
+  return out;
+}
+
+/**
+ * Cuándo mentir y cuándo no, con la cuenta delante.
+ *
+ * Tres cosas mandan, y en este orden: cuánta gente queda (un farol tiene que
+ * funcionar contra todos a la vez), a quién le estás faroleando (a la estación
+ * no se le echa del bote) y qué le quita tu mano a su rango.
+ */
+export function bluffRead(state: GameState, seat: number): BluffRead {
+  const player = state.players[seat];
+  const legal = legalMoves(state, seat);
+  const rivals = state.players.filter(
+    (other) => other.seat !== seat && !other.folded,
+  );
+  const bet = Math.max(BIG_BLIND, Math.round(0.66 * legal.potNow));
+  const foldEquity = breakevenBluff(legal.potNow, bet);
+  const blockers = blockersOf(player.cards, state.board);
+  const reads: string[] = [];
+  const numbers: AdviceNumber[] = [
+    {
+      label: "Tiene que funcionar",
+      value: formatPercent(foldEquity, 0),
+      hint: `de las veces, apostando ${formatBB(bet)} a un bote de ${formatBB(legal.potNow)}`,
+    },
+    {
+      label: "Él debería defender",
+      value: formatPercent(minimumDefenceFrequency(legal.potNow, bet), 0),
+      hint: "si defiende menos que eso, farolear es dinero gratis",
+    },
+    { label: "Rivales en la mano", value: String(rivals.length) },
+  ];
+
+  const nadieSuelta = rivals.filter(
+    (rival) => rival.style === "estación" || rival.style === "flojo",
+  );
+  for (const rival of nadieSuelta) {
+    reads.push(`${rival.name} paga de más: contra él se gana cobrando, no mintiendo.`);
+  }
+
+  const equity =
+    state.board.length > 0 ? quickEquity(state, seat, 1200, (state.handNumber * 41 + seat) | 0).equity : 0;
+
+  if (state.board.length > 0) {
+    numbers.push({ label: "Tu equity", value: formatPercent(equity, 0) });
+  }
+
+  // Preflop el farol es el 3-bet ligero, y ahí lo que manda son los blockers.
+  if (state.street === "preflop") {
+    const puedeResubir = state.raiseCount >= 1 && legal.canRaise;
+    if (!puedeResubir) {
+      return {
+        verdict: "no",
+        headline: "Todavía no hay nada que farolear",
+        detail:
+          "Sin subida delante no hay farol posible: abrir el bote es abrir, no mentir. El farol preflop es el 3-bet ligero.",
+        blockers,
+        reads,
+        numbers,
+      };
+    }
+    if (nadieSuelta.length > 0) {
+      return {
+        verdict: "no",
+        headline: "Aquí no se resube de farol",
+        detail:
+          "El 3-bet de farol vive de que se tiren. Contra quien paga por sistema, el 3-bet solo sirve con manos que quieren un bote grande.",
+        blockers,
+        reads,
+        numbers,
+      };
+    }
+    return {
+      verdict: blockers.length > 0 ? "farol" : "no",
+      headline: blockers.length > 0 ? "Mano de 3-bet ligero" : "Sin blockers, mejor tirarla",
+      detail:
+        blockers.length > 0
+          ? "Los 3-bets de farol se eligen por lo que le quitan, no por lo bonitas que son: A-5s y A-4s bloquean sus ases y encima ligan la escalera baja. A-10s parece mejor mano y es peor sitio, porque su rango de continuar te domina."
+          : "Un 3-bet de farol sin blockers es dinero al aire: si te vuelve a subir, no tienes ni mano ni información.",
+      blockers,
+      reads,
+      numbers,
+    };
+  }
+
+  if (!legal.canRaise) {
+    return {
+      verdict: "no",
+      headline: "No queda con qué apostar",
+      detail: "Sin fichas detrás no hay farol: la decisión es pagar o tirar con lo que tienes.",
+      blockers,
+      reads,
+      numbers,
+    };
+  }
+
+  if (equity >= 0.62) {
+    return {
+      verdict: "valor",
+      headline: "Aquí se cobra, no se miente",
+      detail:
+        "Tienes la mejor mano la mayoría de las veces. Apuestas por valor: quieres que pague, no que se tire.",
+      blockers,
+      reads,
+      numbers,
+    };
+  }
+
+  if (rivals.length > 1) {
+    return {
+      verdict: "no",
+      headline: "Multiway: no se farolea",
+      detail: `El farol tiene que funcionar contra ${rivals.length} manos a la vez. Con uno solo que pague, se acabó. En bote multiway se apuesta con mano, no con historia.`,
+      blockers,
+      reads,
+      numbers,
+    };
+  }
+
+  if (nadieSuelta.length > 0) {
+    return {
+      verdict: "no",
+      headline: "A este rival no se le echa",
+      detail:
+        "Paga demasiado: el farol necesita que se tire y él no se tira. Guarda las fichas para cuando tengas mano y cóbrasela.",
+      blockers,
+      reads,
+      numbers,
+    };
+  }
+
+  const hayProyecto = equity >= 0.25;
+  if (blockers.length > 0 || hayProyecto) {
+    return {
+      verdict: "farol",
+      headline: "Sitio para farolear",
+      detail: hayProyecto
+        ? `Semi-farol: si te pagan todavía puedes ligar. Necesitas que se tire ${formatPercent(
+            foldEquity,
+            0,
+          )} de las veces, y encima tienes salidas cuando no funciona.`
+        : `Farol limpio: le quitas parte de las manos con las que te pagaría y solo necesitas que suelte ${formatPercent(
+            foldEquity,
+            0,
+          )} de las veces.`,
+      blockers,
+      reads,
+      numbers,
+    };
+  }
+
+  return {
+    verdict: "no",
+    headline: "Mano equivocada para mentir",
+    detail:
+      "Ni bloqueas sus manos buenas ni tienes salidas para cuando te paguen. Se farolea con las manos que no valen nada pero le quitan algo, no con las que todavía pueden ganar el bote pasando.",
+    blockers,
+    reads,
+    numbers,
+  };
+}
+
+/* --------------------------------------------------------- el rango del spot */
+
+export interface SpotRange {
+  /** El sitio, en una línea: "Abres desde CO", "BTN contra la subida de UTG". */
+  label: string;
+  /** La notación exacta, cuando el spot tiene una tabla detrás. */
+  notation?: string;
+  /** Qué hace la tabla con cada una de las 169 manos. */
+  actionFor: (hand: HandCode) => Action;
+  /** Las acciones que aparecen, para pintar la leyenda. */
+  legend: Action[];
+}
+
+/**
+ * La tabla que manda en la decisión que tienes delante, lista para pintarla en
+ * la rejilla de 13x13. Del flop en adelante no hay tabla: ahí manda la equity.
+ */
+export function spotRange(state: GameState, seat: number): SpotRange | null {
+  if (state.street !== "preflop") return null;
+  const player = state.players[seat];
+  const position = player.position;
+  const opener = state.aggressor === null ? null : state.players[state.aggressor].position;
+
+  if (state.raiseCount === 0 && position === "SB" && foldedToBlinds(state, seat)) {
+    return {
+      label: "Te llega el bote sin subir en la ciega pequeña",
+      notation: `${SB_UNOPENED.raise} (subir) · limp con el resto del rango`,
+      actionFor: actionSBUnopened,
+      legend: ["raise", "call", "fold"],
+    };
+  }
+
+  if (state.raiseCount === 1 && position === "SB" && opener === "BB" && player.lastAction === "call") {
+    return {
+      label: "Limpeaste y la ciega grande sube",
+      notation: SB_VS_BB_RAISE.threeBet,
+      actionFor: actionSBvsBBRaise,
+      legend: ["3bet", "call", "fold"],
+    };
+  }
+
+  if (state.raiseCount === 0 || opener === null) {
+    const open = rangeFor(position, "open", state.size);
+    const extra = exploitAddFor(referenceSeat(position, state.size));
+    return {
+      label: `Abres el bote desde ${position}`,
+      notation: notationFor(position, "open", state.size),
+      actionFor: (hand) => (open.has(hand) ? "raise" : extra.has(hand) ? "extra" : "fold"),
+      legend: ["raise", "extra", "fold"],
+    };
+  }
+
+  if (state.raiseCount === 1) {
+    const defense = defenseFor(position, opener);
+    return {
+      label: `${position} contra la subida de ${opener}`,
+      notation: defense ? `${defense.threeBet} (3-bet) · ${defense.call} (call)` : undefined,
+      actionFor: (hand) => actionVsOpen(position, opener, hand),
+      legend: ["3bet", "call", "fold"],
+    };
+  }
+
+  const iOpened = player.lastAction === "raise" || player.lastAction === "bet";
+  if (state.raiseCount === 2 && iOpened) {
+    const response = responseTo3Bet(position, opener);
+    return {
+      label: `Abriste y ${opener} te resube`,
+      notation: response ? `${response.fourBet} (4-bet) · ${response.call} (call)` : undefined,
+      actionFor: (hand) => actionVs3Bet(position, opener, hand),
+      legend: ["4bet", "call", "fold"],
+    };
+  }
+
+  const response = responseTo4Bet(opener);
+  return {
+    label: state.raiseCount === 2 ? `Hay subida y 3-bet delante` : `Te han 4-beteado`,
+    notation: `${response.jam} (all-in) · ${response.call} (call)`,
+    actionFor: (hand) => actionVs4Bet(opener, hand),
+    legend: ["allin", "call", "fold"],
   };
 }

@@ -37,7 +37,7 @@ export function SiteFooter() {
           <p className="eyebrow">Herramientas</p>
           <ul className="mt-3 space-y-2 text-sm text-cream-dim">
             <li>
-              <Link href="/juego" className="hover:text-brass-300">
+              <Link href="/" className="hover:text-brass-300">
                 La mesa jugable
               </Link>
             </li>

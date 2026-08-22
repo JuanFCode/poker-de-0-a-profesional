@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   quiz: `${STORAGE_PREFIX}.quiz`,
   bankroll: `${STORAGE_PREFIX}.bankroll`,
   game: `${STORAGE_PREFIX}.game`,
+  leaks: `${STORAGE_PREFIX}.leaks`,
 } as const;
 
 export function readStored<T>(key: string, fallback: T): T {

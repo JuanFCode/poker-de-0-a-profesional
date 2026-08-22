@@ -1,12 +1,6 @@
-import type { Metadata } from "next";
-import { GameTool } from "./game-tool";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Jugar una mano",
-  description:
-    "Mesa de Texas Hold'em contra rivales que juegan con los rangos del curso, con un entrenador que te explica cada decisión: rango, equity y pot odds.",
-};
-
+/** La mesa se juega en la portada. Esta ruta se queda para los enlaces viejos. */
 export default function JuegoPage() {
-  return <GameTool />;
+  redirect("/");
 }

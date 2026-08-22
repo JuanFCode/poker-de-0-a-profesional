@@ -133,6 +133,8 @@ export function LiveTable({
               </p>
               <p className="font-mono text-[9px] leading-tight text-cream-faint">
                 {formatBB(player.stack)}
+                {/* El estilo del rival a la vista: es la lectura que se explota. */}
+                {!spot.isHero && <span className="text-cream-faint/70"> · {player.style}</span>}
               </p>
               {player.lastAction && !player.folded && (
                 <p className="mt-0.5 truncate font-mono text-[9px] leading-tight text-brass-300/90">
