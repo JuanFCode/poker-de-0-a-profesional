@@ -2,6 +2,7 @@
 
 import { ToolShell } from "@/components/tool-shell";
 import { TableExplorer } from "@/components/table-explorer";
+import { ADJUSTMENTS, DEPTH_EFFECT } from "@/lib/poker/preflop-tree";
 
 /** Lo que se puede leer en la mesa sin ver una sola carta del rival. */
 const READS = [
@@ -80,6 +81,58 @@ export function MesaTool() {
             <article key={item.title} className="bg-felt-900 p-6">
               <h3 className="font-display text-xl text-cream">{item.title}</h3>
               <p className="mt-2.5 text-[14px] leading-relaxed text-cream-dim">{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-16">
+        <p className="eyebrow">Ajustar</p>
+        <h2 className="mt-3 max-w-2xl font-display text-3xl leading-tight text-cream">
+          Lo que ves en la mesa y lo que cambias por ello
+        </h2>
+        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-cream-dim">
+          Las tablas son el punto de partida. El dinero está en desviarse por un motivo concreto que
+          puedas decir en voz alta. El primer ajuste de la lista es el que casi todo el mundo hace al
+          revés.
+        </p>
+
+        <div className="mt-8 overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-brass-500/25">
+                <th className="py-2.5 pr-4 font-mono text-[10px] tracking-[0.16em] text-cream-faint uppercase">
+                  Lo que ves
+                </th>
+                <th className="py-2.5 pr-4 font-mono text-[10px] tracking-[0.16em] text-cream-faint uppercase">
+                  Lo que cambias
+                </th>
+                <th className="py-2.5 font-mono text-[10px] tracking-[0.16em] text-cream-faint uppercase">
+                  Por qué
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {ADJUSTMENTS.map((entry) => (
+                <tr key={entry.lectura} className="border-b border-brass-500/10 align-top">
+                  <td className="py-3 pr-4 text-[14px] leading-snug text-cream">{entry.lectura}</td>
+                  <td className="py-3 pr-4 text-[14px] leading-snug text-brass-200">
+                    {entry.ajuste}
+                  </td>
+                  <td className="py-3 text-[13px] leading-relaxed text-cream-dim">{entry.porque}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {DEPTH_EFFECT.map((entry) => (
+            <article key={entry.profundidad} className="surface rounded-xl p-5">
+              <p className="font-mono text-[11px] tracking-[0.14em] text-brass-300 uppercase">
+                {entry.profundidad}
+              </p>
+              <p className="mt-2 text-[14px] leading-relaxed text-cream-dim">{entry.efecto}</p>
             </article>
           ))}
         </div>

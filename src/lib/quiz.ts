@@ -896,6 +896,78 @@ export const QUESTIONS: Question[] = [
     explanation:
       "Apostar primero (donk bet) es cosa de stacks cortos. Con dinero detrás conviene pasar: así todas tus manos fuertes siguen dentro del rango y cada apuesta suya está en peligro.",
   },
+  {
+    id: "pre-sb-limp-protegido",
+    topic: "Preflop",
+    question:
+      "Desde la ciega pequeña subes con todo lo bueno y limpeas solo la morralla. ¿Qué problema tiene?",
+    options: [
+      "Ninguno: así el limp no arriesga nada",
+      "Tu limp queda marcado como débil y la ciega grande te sube encima cada vez",
+      "Que pagas más rastrillo",
+      "Que no puedes ligar color",
+    ],
+    answer: 1,
+    explanation:
+      "El rango de limp también lleva parejas medias y manos decentes. Si solo limpeas basura, subirte encima es gratis para el rival y tu media ciega se evapora vuelta tras vuelta.",
+  },
+  {
+    id: "pre-sb-limp-vs-subida",
+    topic: "Preflop",
+    question: "Limpeas 10-3s desde la ciega pequeña y la ciega grande sube. ¿Qué haces?",
+    options: [
+      "Pagar: ya has puesto fichas",
+      "Tirarla: entraste barato justo porque ibas a poder soltarla",
+      "Resubir para representar fuerza",
+      "Pagar solo si tienes posición",
+    ],
+    answer: 1,
+    explanation:
+      "El limp barato se sostiene sobre poder tirar cuando el precio cambia. Si no sueltas, el rango de limp deja de ser rentable y se convierte en una fuga.",
+  },
+  {
+    id: "post-multiway-top-pair",
+    topic: "Postflop",
+    question:
+      "Bote a tres. Flop K-Q-6, llevas K-8 offsuit, hay apuesta y pago antes de ti. ¿Qué haces?",
+    options: [
+      "Subir por valor y protección",
+      "Pagar para ver el turn",
+      "Tirarla: en ese bote casi nunca tienes la mejor mano",
+      "Subir all-in",
+    ],
+    answer: 2,
+    explanation:
+      "Apuesta y pago en un bote a tres deja vivo un rango con A-A, K-K, Q-Q, A-K y K-Q. Pareja máxima con el peor kicker está dominada por casi todo lo que sigue.",
+  },
+  {
+    id: "post-farol-estacion",
+    topic: "Postflop",
+    question: "Tu único rival en la mano paga demasiado y casi nunca se tira. ¿Cómo le ganas?",
+    options: [
+      "Faroleando más grande para que le duela",
+      "Apostando por valor más fino y faroleando mucho menos",
+      "Pasando siempre y esperando a ligar",
+      "Subiéndole todos los flops",
+    ],
+    answer: 1,
+    explanation:
+      "El farol necesita fold equity, y contra quien no suelta no la hay. A la estación se le gana cobrando manos medias que contra un buen jugador no apostarías.",
+  },
+  {
+    id: "pre-charts-heads-up",
+    topic: "Preflop",
+    question: "Los rangos de defensa contra una subida, ¿para qué situación están calculados?",
+    options: [
+      "Para cualquier número de jugadores en el bote",
+      "Para un bote heads-up: si van subida, pago y pago, se juega más cerrado",
+      "Solo para torneos",
+      "Solo para mesas de 6",
+    ],
+    answer: 1,
+    explanation:
+      "Con dos rangos más dentro, las manos marginales de la tabla pasan a perder dinero. Subida con dos callers no es el mismo sitio que subida y te toca a ti.",
+  },
 ];
 
 export const QUESTION_IDS = QUESTIONS.map((q) => q.id);

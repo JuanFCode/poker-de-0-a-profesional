@@ -127,6 +127,13 @@ export const CURRICULUM: Module[] = [
         minutes: 7,
       },
       {
+        slug: "la-ciega-pequena",
+        title: "La ciega pequeña sin subir",
+        summary: "Repartir, limpear o subir a 4bb: la única silla donde entrar pagando es correcto.",
+        minutes: 7,
+        practice: { href: "/", label: "La mesa jugable" },
+      },
+      {
         slug: "ajustes",
         title: "Ajustar el rango",
         summary: "Stacks cortos, mesas flojas, rivales que nunca tiran: cuándo salirse de la tabla.",

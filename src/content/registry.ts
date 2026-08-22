@@ -21,6 +21,7 @@ export const LESSON_CONTENT: Record<string, () => Promise<{ default: ComponentTy
   "preflop/3-bet": () => import("./preflop/3-bet.mdx"),
   "preflop/squeeze-y-4-bet": () => import("./preflop/squeeze-y-4-bet.mdx"),
   "preflop/defender-las-ciegas": () => import("./preflop/defender-las-ciegas.mdx"),
+  "preflop/la-ciega-pequena": () => import("./preflop/la-ciega-pequena.mdx"),
   "preflop/ajustes": () => import("./preflop/ajustes.mdx"),
 
   "matematicas/pot-odds-y-outs": () => import("./matematicas/pot-odds-y-outs.mdx"),
