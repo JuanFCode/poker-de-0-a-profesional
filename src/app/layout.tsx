@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Bodoni_Moda, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
@@ -45,6 +46,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <main className="flex-1">{children}</main>
           <SiteFooter />
         </div>
+        {/* Visitas y páginas vistas, sin cookies ni datos personales. */}
+        <Analytics />
       </body>
     </html>
   );
