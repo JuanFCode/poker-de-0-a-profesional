@@ -21,6 +21,20 @@ export const BIG_BLIND = 100;
 export const SMALL_BLIND = 50;
 export const STARTING_STACK = 100 * BIG_BLIND;
 
+/**
+ * El rastrillo de una sala en vivo: un 10% del bote con tope de 4bb, y solo si
+ * se llega a ver el flop. Es la razón de que los rangos en vivo sean más
+ * cerrados que los de torneo, y la razón de subir a 4bb desde la ciega pequeña:
+ * la mano que se decide antes del flop no paga nada.
+ */
+export const RAKE = { percent: 0.1, capBB: 4 } as const;
+
+/** Lo que se lleva la casa de un bote, en fichas. Sin flop no hay rastrillo. */
+export function rakeFor(pot: number, sawFlop: boolean): number {
+  if (!sawFlop) return 0;
+  return Math.min(Math.floor(pot * RAKE.percent), RAKE.capBB * BIG_BLIND);
+}
+
 export type GameStreet = "preflop" | "flop" | "turn" | "river" | "showdown";
 
 export const STREET_LABEL: Record<GameStreet, string> = {
@@ -47,7 +61,12 @@ export type GameAction =
   /** `to` es la apuesta total de esa calle, no el incremento (raise to). */
   | { type: "raise"; to: number };
 
-export type BotStyle = "sólido" | "agresivo" | "flojo" | "hero";
+/**
+ * Los cuatro rivales de la mesa. `estación` es el jugador que describe el vídeo
+ * y que llena las salas en vivo: limpea mucho, paga demasiado y casi nunca
+ * resube. Es al que hay que buscar, no al que hay que imitar.
+ */
+export type BotStyle = "sólido" | "agresivo" | "flojo" | "estación" | "hero";
 
 export interface GamePlayer {
   /** Silla fija en el anillo: no cambia aunque rote el botón. */
@@ -96,8 +115,10 @@ export interface HandResult {
   showdown: boolean;
   ranked: RankedHand[];
   summary: string;
-  /** Bote total repartido. */
+  /** Bote total, antes de que la casa cobre. */
   pot: number;
+  /** Lo que se lleva la casa de este bote. */
+  rake: number;
   /** Lo que gana o pierde el héroe en la mano, ya descontado lo que puso. */
   heroDelta: number;
 }
@@ -110,11 +131,15 @@ export interface SessionStats {
   net: number;
   biggestPot: number;
   rebuys: number;
+  /** Fichas que se ha llevado la casa de los botes que ganaste. */
+  rakePaid: number;
 }
 
 export interface GameState {
   size: TableSize;
   startingStack: number;
+  /** Si la casa cobra rastrillo. Se puede apagar para comparar. */
+  rake: boolean;
   handNumber: number;
   buttonSeat: number;
   heroSeat: number;
@@ -144,10 +169,17 @@ export const EMPTY_STATS: SessionStats = {
   net: 0,
   biggestPot: 0,
   rebuys: 0,
+  rakePaid: 0,
 };
 
+/** Sesiones guardadas antes de que existiera un campo: se rellena el hueco. */
+export const normalizeStats = (stats: Partial<SessionStats> | null | undefined): SessionStats => ({
+  ...EMPTY_STATS,
+  ...(stats ?? {}),
+});
+
 const BOT_NAMES = ["Nora", "Bruno", "Iris", "Marco", "Lena", "Toni", "Vera", "Hugo"];
-const BOT_STYLES: BotStyle[] = ["sólido", "agresivo", "flojo", "sólido", "flojo", "agresivo"];
+const BOT_STYLES: BotStyle[] = ["estación", "agresivo", "flojo", "sólido", "estación", "agresivo"];
 
 /* ------------------------------------------------------------------ formato */
 
@@ -165,8 +197,15 @@ export function createGame(options: {
   startingStack?: number;
   seed?: number;
   stats?: SessionStats;
+  rake?: boolean;
 }): GameState {
-  const { size, startingStack = STARTING_STACK, seed = 0x5eed1, stats = EMPTY_STATS } = options;
+  const {
+    size,
+    startingStack = STARTING_STACK,
+    seed = 0x5eed1,
+    stats = EMPTY_STATS,
+    rake = true,
+  } = options;
   const order = positionsFor(size);
   const heroSeat = 0;
 
@@ -189,6 +228,7 @@ export function createGame(options: {
   return {
     size,
     startingStack,
+    rake,
     handNumber: 0,
     // La primera mano se reparte con el héroe en el botón.
     buttonSeat: heroSeat,
@@ -582,6 +622,15 @@ function settle(state: GameState, showdown: boolean): GameState {
   const alive = contenders(state);
   const pots = buildPots(state.players);
   const potTotal = pots.reduce((sum, pot) => sum + pot.amount, 0);
+  // La casa cobra antes de repartir, y empieza por el bote principal.
+  const rake = state.rake ? rakeFor(potTotal, state.board.length >= 3) : 0;
+  let pending = rake;
+  for (const pot of pots) {
+    const taken = Math.min(pot.amount, pending);
+    pot.amount -= taken;
+    pending -= taken;
+    if (pending === 0) break;
+  }
   const payouts = new Map<number, number>();
 
   const ranked: RankedHand[] = showdown
@@ -620,19 +669,25 @@ function settle(state: GameState, showdown: boolean): GameState {
   }));
 
   const heroSeat = state.heroSeat;
-  const heroDelta = (payouts.get(heroSeat) ?? 0) - state.players[heroSeat].committed;
+  const heroPayout = payouts.get(heroSeat) ?? 0;
+  const heroDelta = heroPayout - state.players[heroSeat].committed;
+  // El rastrillo sale del bote, así que lo paga quien se lo lleva.
+  const paidTotal = potTotal - rake;
+  const heroRake = paidTotal > 0 ? Math.round((rake * heroPayout) / paidTotal) : 0;
   const winnerSeats = [...payouts.entries()]
     .filter(([, amount]) => amount > 0)
     .map(([seat]) => seat);
 
   const nameOf = (seat: number) => state.players[seat].name;
-  const summary = !showdown
-    ? `${nameOf(winnerSeats[0])} se lleva ${formatBB(potTotal)} sin enseñar cartas.`
-    : winnerSeats.length === 1
-      ? `${nameOf(winnerSeats[0])} gana ${formatBB(potTotal)} con ${(
-          ranked.find((entry) => entry.seat === winnerSeats[0])?.label ?? "la mejor mano"
-        ).toLowerCase()}.`
-      : `Bote repartido entre ${winnerSeats.map(nameOf).join(" y ")}.`;
+  const casa = rake > 0 ? ` La casa se lleva ${formatBB(rake)} de rastrillo.` : "";
+  const summary =
+    (!showdown
+      ? `${nameOf(winnerSeats[0])} se lleva ${formatBB(paidTotal)} sin enseñar cartas.`
+      : winnerSeats.length === 1
+        ? `${nameOf(winnerSeats[0])} gana ${formatBB(paidTotal)} con ${(
+            ranked.find((entry) => entry.seat === winnerSeats[0])?.label ?? "la mejor mano"
+          ).toLowerCase()}.`
+        : `Bote repartido entre ${winnerSeats.map(nameOf).join(" y ")}.`) + casa;
 
   const heroWon = (payouts.get(heroSeat) ?? 0) > 0;
   const stats: SessionStats = {
@@ -642,6 +697,7 @@ function settle(state: GameState, showdown: boolean): GameState {
     net: state.stats.net + heroDelta,
     biggestPot: Math.max(state.stats.biggestPot, potTotal),
     rebuys: state.stats.rebuys,
+    rakePaid: state.stats.rakePaid + heroRake,
   };
 
   return {
@@ -657,6 +713,7 @@ function settle(state: GameState, showdown: boolean): GameState {
       ranked,
       summary,
       pot: potTotal,
+      rake,
       heroDelta,
     },
     stats,

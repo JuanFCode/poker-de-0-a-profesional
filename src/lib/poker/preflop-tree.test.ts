@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { expandRange, rangePercent, type HandCode } from "./notation";
 import { rangeFor, POSITIONS, type Position } from "./ranges";
 import {
+  actionSBUnopened,
+  actionSBvsBBRaise,
   actionVs3Bet,
   actionVs4Bet,
   actionVsOpen,
@@ -10,7 +12,11 @@ import {
   exploitAddFor,
   loosePercentFor,
   OPEN_SIZE_EFFECT,
+  ADJUSTMENTS,
+  DEPTH_EFFECT,
   responseTo3Bet,
+  SB_UNOPENED,
+  SB_VS_BB_RAISE,
   SIZINGS,
   VS_3BET,
   VS_4BET,
@@ -41,6 +47,10 @@ function everyNotation(): [string, string][] {
   for (const [seat, notation] of Object.entries(EXPLOIT_ADD)) {
     out.push([`EXPLOIT_ADD.${seat}`, notation]);
   }
+  out.push(["SB_UNOPENED.raise", SB_UNOPENED.raise]);
+  out.push(["SB_UNOPENED.limp", SB_UNOPENED.limp]);
+  out.push(["SB_VS_BB_RAISE.threeBet", SB_VS_BB_RAISE.threeBet]);
+  out.push(["SB_VS_BB_RAISE.call", SB_VS_BB_RAISE.call]);
   return out;
 }
 
@@ -289,5 +299,68 @@ describe("tamaños", () => {
   it("la tabla de tamaños de apertura va de menor a mayor", () => {
     expect(OPEN_SIZE_EFFECT).toHaveLength(4);
     expect(OPEN_SIZE_EFFECT[0].tamano).toContain("2bb");
+  });
+});
+
+describe("la ciega pequeña sin subir", () => {
+  const raise = expandRange(SB_UNOPENED.raise);
+  const limp = expandRange(SB_UNOPENED.limp);
+
+  it("subir y limpear no se solapan", () => {
+    for (const hand of raise) expect(limp.has(hand), hand).toBe(false);
+  });
+
+  it("el limp no es solo basura: lleva parejas y manos decentes", () => {
+    // Si el limp solo llevara morralla, la ciega grande subiría encima siempre.
+    for (const hand of ["TT", "99", "88", "A9s", "KJo"] as HandCode[]) {
+      expect(limp.has(hand), hand).toBe(true);
+    }
+  });
+
+  it("se juega muchísimo más de lo que se abre desde cualquier otra silla", () => {
+    // Media ciega para ganar una y media: el precio permite entrar con casi todo.
+    expect(percent(SB_UNOPENED.raise) + percent(SB_UNOPENED.limp)).toBeGreaterThan(55);
+  });
+
+  it("clasifica la mano en subir, limpear o tirar", () => {
+    expect(actionSBUnopened("AA")).toBe("raise");
+    expect(actionSBUnopened("76s")).toBe("raise");
+    expect(actionSBUnopened("99")).toBe("call");
+    expect(actionSBUnopened("Q5o")).toBe("call");
+    expect(actionSBUnopened("72o")).toBe("fold");
+  });
+
+  it("cuando la ciega grande sube, solo sigue lo que quedaba en el limp", () => {
+    const threeBet = expandRange(SB_VS_BB_RAISE.threeBet);
+    const call = expandRange(SB_VS_BB_RAISE.call);
+    for (const hand of threeBet) {
+      expect(limp.has(hand), `3-bet ${hand}`).toBe(true);
+      expect(call.has(hand), `solapado ${hand}`).toBe(false);
+    }
+    for (const hand of call) expect(limp.has(hand), `call ${hand}`).toBe(true);
+    // Las manos que se subieron ya no pueden aparecer aquí.
+    expect(threeBet.has("AA")).toBe(false);
+    expect(actionSBvsBBRaise("T3s")).toBe("fold");
+    expect(actionSBvsBBRaise("TT")).toBe("3bet");
+  });
+});
+
+describe("ajustes y profundidad", () => {
+  it("el primer ajuste es el que casi todo el mundo hace al revés", () => {
+    expect(ADJUSTMENTS[0].lectura).toContain("cerrado");
+    expect(ADJUSTMENTS[0].ajuste).toContain("cerrado");
+  });
+
+  it("cada ajuste explica el porqué y ninguno se repite", () => {
+    const lecturas = new Set(ADJUSTMENTS.map((entry) => entry.lectura));
+    expect(lecturas.size).toBe(ADJUSTMENTS.length);
+    for (const entry of ADJUSTMENTS) {
+      expect(entry.porque.length, entry.lectura).toBeGreaterThan(20);
+    }
+  });
+
+  it("las tres profundidades tienen efecto escrito", () => {
+    expect(DEPTH_EFFECT).toHaveLength(3);
+    for (const entry of DEPTH_EFFECT) expect(entry.efecto.length).toBeGreaterThan(20);
   });
 });

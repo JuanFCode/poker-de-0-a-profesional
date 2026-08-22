@@ -21,6 +21,51 @@ function withCards(state: GameState, cards: Record<number, string>, deck?: strin
 const seatOf = (state: GameState, position: string): number =>
   state.players.findIndex((player) => player.position === position);
 
+/** Cambia el estilo de una silla para probar cómo juega cada rival. */
+const withStyle = (state: GameState, seat: number, style: "estación" | "sólido"): GameState => ({
+  ...state,
+  players: state.players.map((player) => (player.seat === seat ? { ...player, style } : player)),
+});
+
+describe("la estación en vivo", () => {
+  it("entra pagando con manos que el sólido tira", () => {
+    let state = startHand(createGame({ size: 6, seed: 12 }));
+    const lj = seatOf(state, "LJ");
+    // K-9o desde LJ: fuera de rango, pero "tiene figura".
+    state = withCards(state, { [lj]: "Kh9d" });
+    expect(preflopPlan(state, lj).action).toBe("fold");
+
+    const suelto = withStyle(state, lj, "estación");
+    const limps = Array.from({ length: 40 }, (_, i) =>
+      botMove(suelto, lj, createRandom(i + 1)).action,
+    ).filter((action) => action.type === "call").length;
+    expect(limps).toBeGreaterThan(15);
+
+    const serio = withStyle(state, lj, "sólido");
+    const folds = Array.from({ length: 40 }, (_, i) =>
+      botMove(serio, lj, createRandom(i + 1)).action,
+    ).filter((action) => action.type === "fold").length;
+    expect(folds).toBe(40);
+  });
+
+  it("paga subidas que no le dan precio", () => {
+    let state = startHand(createGame({ size: 6, seed: 15 }));
+    const co = seatOf(state, "CO");
+    const bb = seatOf(state, "BB");
+    state = withCards(state, { [bb]: "Qh8d" });
+    while (state.toAct !== co) state = applyAction(state, { type: "fold" });
+    state = applyAction(state, { type: "raise", to: 3 * BIG_BLIND });
+    while (state.toAct !== bb) state = applyAction(state, { type: "fold" });
+
+    expect(preflopPlan(state, bb).action).toBe("fold");
+    const suelto = withStyle(state, bb, "estación");
+    const calls = Array.from({ length: 40 }, (_, i) =>
+      botMove(suelto, bb, createRandom(i + 1)).action,
+    ).filter((action) => action.type === "call").length;
+    expect(calls).toBeGreaterThan(10);
+  });
+});
+
 describe("plan preflop", () => {
   it("abre con la mano más fuerte desde la peor silla", () => {
     let state = startHand(createGame({ size: 9, seed: 1 }));

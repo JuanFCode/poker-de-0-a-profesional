@@ -10,7 +10,8 @@
  *
  * Cada bot tiene un estilo que desplaza esas mismas tablas: el flojo abre con
  * los añadidos explotativos y paga de más, el agresivo convierte calls en
- * 3-bets y farolea más, el sólido juega la tabla tal cual.
+ * 3-bets y farolea más, el sólido juega la tabla tal cual y la estación entra
+ * pagando con cualquier cosa que "parezca" mano y luego no suelta.
  */
 
 import { calculateEquity } from "./equity";
@@ -23,6 +24,8 @@ import {
 } from "./game";
 import { handCodeOf, type HandCode } from "./notation";
 import {
+  actionSBUnopened,
+  actionSBvsBBRaise,
   actionVs3Bet,
   actionVs4Bet,
   actionVsOpen,
@@ -30,6 +33,8 @@ import {
   exploitAddFor,
   responseTo3Bet,
   responseTo4Bet,
+  SB_UNOPENED,
+  SB_VS_BB_RAISE,
 } from "./preflop-tree";
 import { requiredEquity } from "./odds";
 import { notationFor, rangeFor, referenceSeat, type Action, type Position } from "./ranges";
@@ -59,6 +64,14 @@ export interface PreflopPlan {
 const aggressorPosition = (state: GameState): Position | null =>
   state.aggressor === null ? null : state.players[state.aggressor].position;
 
+/** true si todo el mundo se ha tirado y el bote está solo entre las dos ciegas. */
+export function foldedToBlinds(state: GameState, seat: number): boolean {
+  return state.players.every(
+    (player) =>
+      player.seat === seat || player.folded || player.position === "BB" || player.position === "SB",
+  );
+}
+
 /** Jugadores que solo han igualado la subida: cada uno engorda el squeeze. */
 function callersBehindRaise(state: GameState): number {
   return state.players.filter(
@@ -81,6 +94,30 @@ export function preflopPlan(state: GameState, seat: number): PreflopPlan {
   const position = me.position;
   const opener = aggressorPosition(state);
   const inPosition = opener ? hasPositionOn(position, opener, size) : true;
+
+  // Le llega el bote a la ciega pequeña sin subir: capa propia, con limp.
+  if (state.raiseCount === 0 && position === "SB" && foldedToBlinds(state, seat)) {
+    const action = actionSBUnopened(hand);
+    return {
+      action,
+      raiseTo: 4 * BIG_BLIND,
+      spot: "Te llega el bote sin subir en la ciega pequeña",
+      notation: action === "call" ? SB_UNOPENED.limp : SB_UNOPENED.raise,
+      note: SB_UNOPENED.nota,
+    };
+  }
+
+  // Limpeaste desde la ciega pequeña y la ciega grande sube encima.
+  if (state.raiseCount === 1 && position === "SB" && opener === "BB" && me.lastAction === "call") {
+    const action = actionSBvsBBRaise(hand);
+    return {
+      action,
+      raiseTo: 3 * state.currentBet,
+      spot: "Limpeaste y la ciega grande sube",
+      notation: action === "call" ? SB_VS_BB_RAISE.call : SB_VS_BB_RAISE.threeBet,
+      note: SB_VS_BB_RAISE.nota,
+    };
+  }
 
   // Nadie ha subido: abres o te tiras.
   if (state.raiseCount === 0 || opener === null) {
@@ -196,8 +233,23 @@ const STYLE = {
   sólido: { widen: false, callBonus: 0, bluff: 0.08, valueGate: 0.62 },
   agresivo: { widen: true, callBonus: -0.02, bluff: 0.22, valueGate: 0.56 },
   flojo: { widen: true, callBonus: 0.09, bluff: 0.03, valueGate: 0.68 },
+  // La estación paga muy por debajo del precio y casi nunca farolea: se le gana
+  // apostando por valor y no intentando echarla del bote.
+  estación: { widen: true, callBonus: 0.18, bluff: 0.01, valueGate: 0.74 },
   hero: { widen: false, callBonus: 0, bluff: 0.08, valueGate: 0.62 },
 } satisfies Record<BotStyle, { widen: boolean; callBonus: number; bluff: number; valueGate: number }>;
+
+/**
+ * Lo que a la estación "le parece" mano: cualquier pareja, cualquier suited y
+ * cualquier cosa con una figura. No es un rango: es justo el error que describe
+ * el vídeo, entrar con manos que luego quedan dominadas.
+ */
+function looksPlayable(hand: HandCode): boolean {
+  const [a, b] = [hand[0], hand[1]];
+  if (a === b) return true;
+  if (hand.endsWith("s")) return true;
+  return "AKQJT".includes(a) || "AKQJT".includes(b);
+}
 
 const clampRaise = (state: GameState, seat: number, to: number): number => {
   const legal = legalMoves(state, seat);
@@ -231,6 +283,33 @@ function preflopMove(state: GameState, seat: number, random: () => number): BotM
   // El agresivo convierte parte de sus calls en 3-bet; el flojo, al revés.
   if (action === "call" && me.style === "agresivo" && random() < 0.35) action = "3bet";
   if (action === "3bet" && me.style === "flojo" && random() < 0.4) action = "call";
+
+  // La estación: entra pagando en vez de abrir, limpea cualquier cosa que le
+  // guste y casi nunca resube. De ahí salen los botes multiway en vivo.
+  if (me.style === "estación") {
+    if (state.raiseCount === 0 && action === "raise" && legal.canCall && random() < 0.45) {
+      action = "call";
+    }
+    if (
+      state.raiseCount === 0 &&
+      action === "fold" &&
+      legal.canCall &&
+      looksPlayable(hand) &&
+      random() < 0.7
+    ) {
+      action = "call";
+    }
+    if (action === "3bet" && random() < 0.75) action = "call";
+    if (
+      action === "fold" &&
+      legal.callAmount > 0 &&
+      legal.callAmount <= 4 * BIG_BLIND &&
+      looksPlayable(hand) &&
+      random() < 0.6
+    ) {
+      action = "call";
+    }
+  }
   // El flojo paga de más desde la ciega grande cuando el precio es barato.
   if (
     action === "fold" &&
@@ -250,6 +329,9 @@ function preflopMove(state: GameState, seat: number, random: () => number): BotM
   }
   if (action === "call") {
     if (legal.canCheck) return { action: { type: "check" }, reason: `${plan.spot}: mano jugable.` };
+    if (me.style === "estación" && state.raiseCount === 0) {
+      return { action: { type: "call" }, reason: "Entra pagando: le gusta la mano y no quiere subir." };
+    }
     return { action: { type: "call" }, reason: `${plan.spot}: iguala con el rango de call.` };
   }
   if (!legal.canRaise) {

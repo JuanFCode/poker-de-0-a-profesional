@@ -8,6 +8,8 @@ import {
   formatBB,
   legalMoves,
   positionOf,
+  RAKE,
+  rakeFor,
   SMALL_BLIND,
   startHand,
   totalPot,
@@ -16,7 +18,8 @@ import {
 import { botMove } from "./bot";
 import { createRandom } from "./random";
 
-const deal = (size: 9 | 6 | 2 = 6, seed = 42) => startHand(createGame({ size, seed }));
+const deal = (size: 9 | 6 | 2 = 6, seed = 42, rake = false) =>
+  startHand(createGame({ size, seed, rake }));
 
 /** Fichas que hay en la mesa: stacks + lo apostado + lo recogido. */
 const chipsOnTable = (state: GameState): number =>
@@ -162,10 +165,69 @@ describe("botes laterales", () => {
   });
 });
 
+describe("rastrillo", () => {
+  it("no cobra si la mano se decide antes del flop", () => {
+    expect(rakeFor(50 * BIG_BLIND, false)).toBe(0);
+  });
+
+  it("cobra el 10% del bote hasta el tope de 4bb", () => {
+    expect(rakeFor(20 * BIG_BLIND, true)).toBe(2 * BIG_BLIND);
+    expect(rakeFor(100 * BIG_BLIND, true)).toBe(RAKE.capBB * BIG_BLIND);
+  });
+
+  it("la casa solo cobra cuando se ve el flop", () => {
+    // Heads-up: el botón sube, la ciega grande se tira. No hay flop.
+    let sinFlop = startHand(createGame({ size: 2, seed: 5, rake: true }));
+    sinFlop = applyAction(sinFlop, { type: "raise", to: 3 * BIG_BLIND });
+    sinFlop = applyAction(sinFlop, { type: "fold" });
+    expect(sinFlop.result?.rake).toBe(0);
+
+    // Ahora se paga y se pasa hasta el showdown: el bote sí paga rastrillo.
+    let conFlop = startHand(createGame({ size: 2, seed: 5, rake: true }));
+    conFlop = applyAction(conFlop, { type: "call" });
+    conFlop = applyAction(conFlop, { type: "check" });
+    let guard = 0;
+    while (conFlop.result === null && guard++ < 40) {
+      conFlop = applyAction(conFlop, { type: "check" });
+    }
+    expect(conFlop.result!.rake).toBe(rakeFor(conFlop.result!.pot, true));
+    expect(conFlop.result!.rake).toBeGreaterThan(0);
+  });
+
+  it("lo repartido más el rastrillo es todo el bote", () => {
+    const random = createRandom(7);
+    let state = createGame({ size: 6, seed: 31, rake: true });
+    for (let hand = 0; hand < 25; hand++) {
+      state = startHand(state);
+      let guard = 0;
+      while (state.result === null && guard++ < 200) {
+        state = applyAction(state, botMove(state, state.toAct!, random).action);
+      }
+      const result = state.result!;
+      const repartido = result.payouts.reduce((sum, share) => sum + share.amount, 0);
+      expect(repartido + result.rake).toBe(result.pot);
+    }
+  });
+
+  it("apagado, la casa no se lleva nada", () => {
+    const random = createRandom(3);
+    let state = createGame({ size: 6, seed: 77, rake: false });
+    for (let hand = 0; hand < 10; hand++) {
+      state = startHand(state);
+      let guard = 0;
+      while (state.result === null && guard++ < 200) {
+        state = applyAction(state, botMove(state, state.toAct!, random).action);
+      }
+      expect(state.result!.rake).toBe(0);
+    }
+  });
+});
+
 describe("invariantes jugando manos enteras", () => {
   it("las fichas de la mesa no se crean ni se destruyen", () => {
     const random = createRandom(2024);
-    let state = createGame({ size: 6, seed: 99 });
+    // Sin rastrillo: con la casa cobrando, las fichas sí salen de la mesa.
+    let state = createGame({ size: 6, seed: 99, rake: false });
 
     for (let hand = 0; hand < 60; hand++) {
       state = startHand(state);

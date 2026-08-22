@@ -483,3 +483,157 @@ export const OPEN_SIZE_EFFECT: { tamano: string; defiendes: string }[] = [
   { tamano: "4bb", defiendes: "Un escalón más cerrado" },
   { tamano: "5bb o más", defiendes: "Mucho más cerrado. Ni siquiera J-J es un 3-bet automático" },
 ];
+
+/* ------------------------------------------- 4. la ciega pequeña sin subir */
+
+export interface SmallBlindPlan {
+  /** Con qué subes a 4bb. */
+  raise: string;
+  /** Con qué entras pagando. Todo lo que no está en ninguna de las dos, se tira. */
+  limp: string;
+  nota: string;
+}
+
+/**
+ * Le llega el bote a la ciega pequeña sin que nadie haya subido.
+ *
+ * Lo primero es que en una sala con rastrillo, **repartir** (chop) suele ser la
+ * mejor jugada del día: un bote de dos ciegas paga un porcentaje enorme de
+ * rastrillo para lo poco que hay dentro.
+ *
+ * Si no se reparte, hay dos rangos, y el detalle está en el de limp: no se
+ * limpea solo la basura. Si subes con todo lo bueno y limpeas solo lo malo, tu
+ * limp queda marcado y la ciega grande te sube encima cada vez. Por eso se
+ * limpea también con parejas medias y manos decentes.
+ *
+ * El tamaño de la subida es 4bb, no 3bb: aquí no te importa que se retire, y
+ * con el bote más grande el rastrillo topa antes del flop.
+ */
+export const SB_UNOPENED: SmallBlindPlan = {
+  raise: "JJ+, ATs+, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, 65s, 54s, AQo+",
+  limp: "TT-22, A9s-A2s, K9s-K2s, Q9s-Q2s, J9s-J2s, T8s-T2s, 97s-92s, 86s-82s, 75s-72s, 64s-62s, 53s-52s, 43s-42s, 32s, AJo-A2o, KQo-K5o, QJo-Q5o, JTo-J6o, T9o-T6o, 98o-96o, 87o-86o, 76o, 65o, 54o",
+  nota: "Pones media ciega para ganar una y media: con un 30% de equity ya sale a cuenta entrar. Lo que no vale es entrar pagando y luego no saber soltar.",
+};
+
+/** Qué hacer con la mano cuando te llega el bote sin subir en la ciega pequeña. */
+export function actionSBUnopened(hand: HandCode): Action {
+  if (expandCached(SB_UNOPENED.raise).has(hand)) return "raise";
+  if (expandCached(SB_UNOPENED.limp).has(hand)) return "call";
+  return "fold";
+}
+
+export interface SBvsBBPlan {
+  threeBet: string;
+  call: string;
+  nota: string;
+}
+
+/**
+ * Limpeaste desde la ciega pequeña y la ciega grande te sube encima.
+ *
+ * Las manos fuertes ya no están aquí: las subiste antes. Con lo que queda se
+ * resube lineal —lo mejor del rango de limp—, se paga el medio y se tira la
+ * basura sin sentirse mal: entraste barato, ahora el precio es otro.
+ */
+export const SB_VS_BB_RAISE: SBvsBBPlan = {
+  threeBet: "TT-88, A9s-A8s, K9s, Q9s, J9s, AJo, ATo, KQo",
+  call: "77-22, A7s-A2s, K8s-K5s, Q8s-Q6s, J8s-J7s, T8s-T7s, 97s-96s, 86s-85s, 75s-74s, 64s, 53s, KJo, KTo, QJo, JTo",
+  nota: "Tirar el 10-3s que limpeaste no es jugar débil: es lo que te permitía limpearlo. El error sería pagar la subida por no reconocer que ya no tienes precio.",
+};
+
+export function actionSBvsBBRaise(hand: HandCode): Action {
+  if (expandCached(SB_VS_BB_RAISE.threeBet).has(hand)) return "3bet";
+  if (expandCached(SB_VS_BB_RAISE.call).has(hand)) return "call";
+  return "fold";
+}
+
+/* ------------------------------------------------------------ ajustes por rival */
+
+export interface Adjustment {
+  /** Lo que ves en la mesa. */
+  lectura: string;
+  /** Qué cambias. */
+  ajuste: string;
+  porque: string;
+}
+
+/**
+ * Las tablas son el punto de partida; el dinero está en desviarse cuando la
+ * mesa te lo regala. El ajuste que más gente hace al revés está el primero.
+ */
+export const ADJUSTMENTS: Adjustment[] = [
+  {
+    lectura: "El rival abre muy cerrado",
+    ajuste: "Juegas más cerrado todavía",
+    porque:
+      "Contra un rango que solo trae manos buenas no hay manos marginales rentables. Mucha gente hace lo contrario y paga por 'darle acción'.",
+  },
+  {
+    lectura: "Nadie resube casi nunca",
+    ajuste: "Abres más ancho, pero solo desde CO y botón",
+    porque:
+      "Si no te van a resubir, tu apertura llega al flop en posición casi siempre. Desde temprana sigue habiendo cinco manos por detrás que se despiertan.",
+  },
+  {
+    lectura: "Abren a 5bb en vez de 3bb",
+    ajuste: "Defiendes bastante menos: ni J-J es un 3-bet automático",
+    porque:
+      "Arriesgar mucho para ganar poco solo se hace con rango fuerte, y tú pagas peor precio. Las dos cosas empujan en la misma dirección.",
+  },
+  {
+    lectura: "Te resuben pequeño (subes a 3bb y te ponen 8bb)",
+    ajuste: "Pagas más ancho de lo que dice la tabla",
+    porque:
+      "El precio es mejor y queda más stack detrás: se puede ver flop con manos que necesitan ligar algo para seguir.",
+  },
+  {
+    lectura: "Abre un jugador malo y detrás queda uno bueno",
+    ajuste: "Resubes más ancho para quedarte a solas con el malo",
+    porque:
+      "El 3-bet no es solo por valor: es para echar al bueno del bote y jugar la mano contra el que se equivoca.",
+  },
+  {
+    lectura: "Los dos que quedan juegan mal",
+    ajuste: "Pagas más y no te importa el bote multiway",
+    porque:
+      "Con dos rivales que pagan de más y no faroleas, el bote grande a tres bandas es tuyo más veces de las que dice la equity.",
+  },
+  {
+    lectura: "La mesa paga todo y no farolea",
+    ajuste: "Apuestas más fino por valor y faroleas mucho menos",
+    porque:
+      "No se echa a nadie de un bote que no quiere soltar. Contra una estación se gana cobrando, no mintiendo.",
+  },
+  {
+    lectura: "Hay tres limpers delante",
+    ajuste: "Isolas más grande (5bb + 1bb por limper) y con un rango más cerrado",
+    porque:
+      "Las tablas presuponen un bote heads-up. Con cuatro dentro, la mano media pierde muchísimo valor y la posición pesa más.",
+  },
+];
+
+/* --------------------------------------------------------- efecto del stack */
+
+export interface DepthEffect {
+  profundidad: string;
+  efecto: string;
+}
+
+/**
+ * Cuanto más profundo se juega, más valen las manos que pueden hacer la nuts y
+ * menos las que solo hacen pareja alta. Es el mismo argumento que explica por
+ * qué K-8s se abre y K-8o no se abre nunca.
+ */
+export const DEPTH_EFFECT: DepthEffect[] = [
+  { profundidad: "100bb", efecto: "Las tablas, tal cual. Es la profundidad para la que están hechas." },
+  {
+    profundidad: "200bb o más",
+    efecto:
+      "Suited arriba, offsuit abajo. El 3-bet se estrecha hacia A-A, K-K, A-K y ases suited: para meter mucho dinero quieres poder tener la nuts.",
+  },
+  {
+    profundidad: "40bb o menos",
+    efecto:
+      "Offsuit sube: A-J y K-Q valen más porque la mano acaba antes y ligar pareja alta basta. Menos especulativas, más manos que ligan.",
+  },
+];
