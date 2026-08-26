@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { GridLegend, HandGrid } from "@/components/hand-grid";
-import { HeroHandPicker } from "@/components/hero-hand-picker";
+import { HandSetupPicker } from "@/components/hand-setup-picker";
 import { LiveTable } from "@/components/live-table";
 import { PlayingCard } from "@/components/playing-card";
 import { Stat } from "@/components/tool-shell";
@@ -17,7 +17,6 @@ import {
   EMPTY_STATS,
   formatBB,
   isHeroTurn,
-  isValidHeroCards,
   legalMoves,
   normalizeStats,
   RAKE,
@@ -74,8 +73,9 @@ export function GameTool() {
   const [botNote, setBotNote] = useState<string | null>(null);
   /** Lo que has movido tú el deslizador; si no lo tocas manda la sugerencia. */
   const [raiseOverride, setRaiseOverride] = useState<number | null>(null);
-  /** Cartas que te eliges tú; vacío = reparto al azar. */
+  /** Cartas que te eliges tú y board fijado; vacío = reparto al azar. */
   const [myCards, setMyCards] = useState<Card[]>([]);
+  const [myBoard, setMyBoard] = useState<Card[]>([]);
 
   const heroTurn = isHeroTurn(state) && state.result === null;
   const legal = heroTurn ? legalMoves(state, state.heroSeat) : null;
@@ -145,7 +145,7 @@ export function GameTool() {
     setBotNote(null);
     setRaiseOverride(null);
     const base = state.handNumber === 0 || state.size !== size || state.rake !== rake ? fresh() : state;
-    setState(startHand(base, isValidHeroCards(myCards) ? { heroCards: myCards } : {}));
+    setState(startHand(base, { heroCards: myCards, board: myBoard }));
   };
 
   const restart = (options: { size?: TableSize; rake?: boolean }) => {
@@ -268,7 +268,14 @@ export function GameTool() {
             )}
 
             {(state.handNumber === 0 || state.result !== null) && (
-              <HeroHandPicker cards={myCards} onChange={setMyCards} />
+              <HandSetupPicker
+                cards={myCards}
+                board={myBoard}
+                onChange={(next) => {
+                  setMyCards(next.cards);
+                  setMyBoard(next.board);
+                }}
+              />
             )}
 
             {legal && (

@@ -51,6 +51,35 @@ describe("reparto", () => {
     expect(state.deck.length).toBe(52 - 2 * 6);
   });
 
+  it("puede fijar el board que quieres ver", () => {
+    const heroCards = parseCards("AhKh");
+    const board = parseCards("QhJh2c");
+    let state = startHand(createGame({ size: 6, seed: 11, rake: false }), { heroCards, board });
+
+    // Las cartas fijadas están arriba del mazo: el flop sale tal cual.
+    expect(state.deck.slice(0, 3)).toEqual(board);
+    while (state.result === null && state.street === "preflop") {
+      state = applyAction(state, legalMoves(state, state.toAct!).canCheck ? { type: "check" } : { type: "call" });
+    }
+    expect(state.board.slice(0, 3)).toEqual(board);
+    expect(state.players[state.heroSeat].cards).toEqual(heroCards);
+    expect(hasDuplicates([...state.players.flatMap((player) => player.cards), ...state.deck])).toBe(
+      false,
+    );
+  });
+
+  it("ignora un board imposible y lo reparte al azar", () => {
+    const state = startHand(createGame({ size: 6, seed: 11, rake: false }), {
+      heroCards: parseCards("AhKh"),
+      // El as de corazones ya lo tienes tú.
+      board: parseCards("AhJh2c"),
+    });
+    expect(hasDuplicates([...state.players.flatMap((player) => player.cards), ...state.deck])).toBe(
+      false,
+    );
+    expect(state.deck.slice(0, 3)).not.toEqual(parseCards("AhJh2c"));
+  });
+
   it("ignora una elección inválida y reparte al azar", () => {
     const state = startHand(createGame({ size: 6, seed: 7, rake: false }), {
       heroCards: parseCards("AsAs"),

@@ -262,33 +262,45 @@ const seatWithPosition = (state: GameState, position: Position): number =>
 
 /* ------------------------------------------------------------- repartir mano */
 
+/** Un entero que existe en la baraja. */
+const isCard = (card: number): boolean => Number.isInteger(card) && card >= 0 && card < 52;
+
 /** Dos cartas distintas y dentro de la baraja: lo que se puede forzar al héroe. */
 export function isValidHeroCards(cards: readonly Card[] | undefined): cards is readonly Card[] {
-  return (
-    cards !== undefined &&
-    cards.length === 2 &&
-    cards.every((card) => Number.isInteger(card) && card >= 0 && card < 52) &&
-    !hasDuplicates(cards)
-  );
+  return cards !== undefined && cards.length === 2 && cards.every(isCard) && !hasDuplicates(cards);
+}
+
+/**
+ * Las cartas del board que se pueden forzar: hasta cinco, sin repetir y sin
+ * chocar con la mano elegida. Salen en orden, así que tres fijan el flop, la
+ * cuarta el turn y la quinta el river; con menos, el resto se reparte al azar.
+ */
+export function fixedBoard(board: readonly Card[] | undefined, heroCards: readonly Card[]): Card[] {
+  if (board === undefined || board.length === 0 || board.length > 5) return [];
+  if (!board.every(isCard) || hasDuplicates([...board, ...heroCards])) return [];
+  return [...board];
 }
 
 /**
  * Nueva mano: rota el botón, recompra a quien se quedó sin fichas y reparte.
  *
- * `heroCards` fuerza la mano del héroe (para practicar un sitio concreto): esas
- * dos cartas salen de la baraja antes de mezclar, así que el resto de la mesa
- * reparte normal y nadie puede tener una copia.
+ * `heroCards` y `board` fuerzan tu mano y las cartas comunes (para practicar un
+ * sitio concreto): esas cartas salen de la baraja antes de mezclar —así nadie
+ * puede tener una copia— y el board elegido se pone encima del mazo, de donde
+ * salen el flop, el turn y el river. El resto de la mesa reparte normal.
  */
 export function startHand(
   state: GameState,
-  options: { heroCards?: readonly Card[] } = {},
+  options: { heroCards?: readonly Card[]; board?: readonly Card[] } = {},
 ): GameState {
   const size = state.size;
   const handNumber = state.handNumber + 1;
   const buttonSeat = state.handNumber === 0 ? state.buttonSeat : (state.buttonSeat + 1) % size;
   const random = createRandom(state.seed);
   const chosen = isValidHeroCards(options.heroCards) ? [...options.heroCards] : null;
-  const deck = shuffle(chosen ? deckWithout(chosen) : DECK, random);
+  const board = fixedBoard(options.board, chosen ?? []);
+  const reserved = [...(chosen ?? []), ...board];
+  const deck = shuffle(reserved.length > 0 ? deckWithout(reserved) : DECK, random);
   let rebuys = state.stats.rebuys;
   let net = state.stats.net;
 
@@ -331,7 +343,7 @@ export function startHand(
     buttonSeat,
     players,
     board: [],
-    deck: deck.slice(index),
+    deck: [...board, ...deck.slice(index)],
     street: "preflop",
     pot: 0,
     currentBet: 0,
