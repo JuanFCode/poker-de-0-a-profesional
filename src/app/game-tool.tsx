@@ -11,6 +11,7 @@ import { botMove } from "@/lib/poker/bot";
 import { type Card } from "@/lib/poker/cards";
 import { advise, bluffRead, matchesAdvice, spotRange, type Advice } from "@/lib/poker/coach";
 import {
+  abandonHand,
   applyAction,
   BIG_BLIND,
   createGame,
@@ -76,6 +77,8 @@ export function GameTool() {
   /** Cartas que te eliges tú y board fijado; vacío = reparto al azar. */
   const [myCards, setMyCards] = useState<Card[]>([]);
   const [myBoard, setMyBoard] = useState<Card[]>([]);
+  /** La baraja abierta: se abre también tocando tus cartas del cabecero. */
+  const [setupOpen, setSetupOpen] = useState(false);
 
   const heroTurn = isHeroTurn(state) && state.result === null;
   const legal = heroTurn ? legalMoves(state, state.heroSeat) : null;
@@ -144,7 +147,12 @@ export function GameTool() {
     setFeedback(null);
     setBotNote(null);
     setRaiseOverride(null);
-    const base = state.handNumber === 0 || state.size !== size || state.rake !== rake ? fresh() : state;
+    // Si hay mano en curso se deja a medias y se devuelve lo apostado: no hay
+    // ganador, así que esa mano no cuenta para la sesión.
+    const base =
+      state.handNumber === 0 || state.size !== size || state.rake !== rake
+        ? fresh()
+        : abandonHand(state);
     setState(startHand(base, { heroCards: myCards, board: myBoard }));
   };
 
@@ -205,10 +213,18 @@ export function GameTool() {
               </p>
               {hero.cards.length === 2 && (
                 <div className="flex items-center gap-1.5">
-                  {hero.cards.map((card, index) => (
-                    <PlayingCard key={`${card}-${index}`} card={card} size="sm" />
-                  ))}
-                  <span className="ml-1 font-mono text-[10px] text-cream-faint">
+                  <button
+                    type="button"
+                    onClick={() => setSetupOpen((value) => !value)}
+                    aria-expanded={setupOpen}
+                    title="Elegir tus cartas y el board"
+                    className="flex items-center gap-1.5 rounded-lg p-1 transition-transform hover:scale-105"
+                  >
+                    {hero.cards.map((card, index) => (
+                      <PlayingCard key={`${card}-${index}`} card={card} size="sm" />
+                    ))}
+                  </button>
+                  <span className="font-mono text-[10px] text-cream-faint">
                     {hero.position} · {formatBB(hero.stack)}
                   </span>
                 </div>
@@ -265,17 +281,6 @@ export function GameTool() {
                   Siguiente mano
                 </button>
               </div>
-            )}
-
-            {(state.handNumber === 0 || state.result !== null) && (
-              <HandSetupPicker
-                cards={myCards}
-                board={myBoard}
-                onChange={(next) => {
-                  setMyCards(next.cards);
-                  setMyBoard(next.board);
-                }}
-              />
             )}
 
             {legal && (
@@ -350,6 +355,19 @@ export function GameTool() {
                 Hablan los rivales…
               </p>
             )}
+
+            <HandSetupPicker
+              cards={myCards}
+              board={myBoard}
+              onChange={(next) => {
+                setMyCards(next.cards);
+                setMyBoard(next.board);
+              }}
+              open={setupOpen}
+              onOpenChange={setSetupOpen}
+              // Con una mano en curso hay que repartir otra para verlas caer.
+              onDealNow={state.handNumber > 0 && state.result === null ? deal : undefined}
+            />
 
             {botNote && (
               <p className="mt-4 border-t border-brass-500/10 pt-3 text-[13px] leading-relaxed text-cream-faint">

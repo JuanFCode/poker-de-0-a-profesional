@@ -282,6 +282,28 @@ export function fixedBoard(board: readonly Card[] | undefined, heroCards: readon
 }
 
 /**
+ * Deja la mano a medias y devuelve a cada uno lo que había puesto.
+ *
+ * Es lo que hace falta para cambiar las cartas en mitad de una mano: como no
+ * hay ganador, nadie paga nada y la sesión no cuenta esa mano.
+ */
+export function abandonHand(state: GameState): GameState {
+  if (state.handNumber === 0 || state.result !== null) return state;
+  return {
+    ...state,
+    players: state.players.map((player) => ({
+      ...player,
+      stack: player.stack + player.committed,
+      bet: 0,
+      committed: 0,
+    })),
+    pot: 0,
+    currentBet: 0,
+    toAct: null,
+  };
+}
+
+/**
  * Nueva mano: rota el botón, recompra a quien se quedó sin fichas y reparte.
  *
  * `heroCards` y `board` fuerzan tu mano y las cartas comunes (para practicar un

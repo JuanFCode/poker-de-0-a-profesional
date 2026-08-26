@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hasDuplicates, parseCards } from "./cards";
 import {
+  abandonHand,
   applyAction,
   BIG_BLIND,
   buildPots,
@@ -86,6 +87,18 @@ describe("reparto", () => {
     });
     expect(state.players[state.heroSeat].cards.length).toBe(2);
     expect(hasDuplicates(state.players.flatMap((player) => player.cards))).toBe(false);
+  });
+
+  it("dejar la mano a medias devuelve lo apostado y no toca la sesión", () => {
+    let state = deal(6);
+    state = applyAction(state, { type: "raise", to: 3 * BIG_BLIND });
+    state = applyAction(state, { type: "call" });
+
+    const abandoned = abandonHand(state);
+    expect(abandoned.pot).toBe(0);
+    expect(abandoned.players.every((player) => player.stack === abandoned.startingStack)).toBe(true);
+    expect(chipsOnTable(abandoned)).toBe(6 * abandoned.startingStack);
+    expect(abandoned.stats).toEqual(state.stats);
   });
 
   it("empieza a hablar el primero de la mesa, no el botón", () => {

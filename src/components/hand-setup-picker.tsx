@@ -24,12 +24,18 @@ export function HandSetupPicker({
   cards,
   board,
   onChange,
+  open,
+  onOpenChange,
+  onDealNow,
 }: {
   cards: Card[];
   board: Card[];
   onChange: (next: { cards: Card[]; board: Card[] }) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Si se pasa, se puede tirar la mano en curso y repartir otra con estas cartas. */
+  onDealNow?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [slot, setSlot] = useState<Slot>("mano");
   const used = [...cards, ...board];
   const nothingFixed = used.length === 0;
@@ -55,7 +61,7 @@ export function HandSetupPicker({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => onOpenChange(!open)}
           aria-expanded={open}
           className="font-mono text-[10px] tracking-[0.16em] text-cream-faint uppercase transition-colors hover:text-brass-300"
         >
@@ -82,7 +88,7 @@ export function HandSetupPicker({
             active={open && slot === "mano"}
             onActivate={() => {
               setSlot("mano");
-              setOpen(true);
+              onOpenChange(true);
             }}
             onRemove={(index) => remove("mano", index)}
           />
@@ -93,7 +99,7 @@ export function HandSetupPicker({
             active={open && slot === "board"}
             onActivate={() => {
               setSlot("board");
-              setOpen(true);
+              onOpenChange(true);
             }}
             onRemove={(index) => remove("board", index)}
           />
@@ -108,12 +114,23 @@ export function HandSetupPicker({
               : `Las cartas del board salen en orden: las tres primeras son el flop, la cuarta el turn y la quinta el river. Ahora estás poniendo el ${BOARD_LABEL[Math.min(board.length, 4)]}.`}
           </p>
           <CardPicker used={used} onPick={pick} />
+
+          {onDealNow && (
+            <button
+              type="button"
+              onClick={onDealNow}
+              className="mt-4 w-full rounded-full border border-brass-500/40 px-5 py-2.5 font-mono text-[11px] tracking-[0.14em] text-brass-200 uppercase transition-colors hover:border-brass-400 hover:bg-brass-500/10"
+            >
+              Repartir de nuevo con estas cartas
+            </button>
+          )}
         </div>
       )}
 
       {!open && !nothingFixed && (
         <p className="mt-2 text-xs leading-relaxed text-cream-faint">
           Estas cartas caen en cada mano; lo que dejes vacío se reparte al azar.
+          {onDealNow && " La mano en curso no cambia hasta que repartas otra."}
         </p>
       )}
     </div>
