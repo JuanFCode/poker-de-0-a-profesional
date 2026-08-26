@@ -12,7 +12,7 @@
  * enteros evita los decimales sueltos al partir un bote entre dos ganadores.
  */
 
-import { DECK, type Card } from "./cards";
+import { DECK, deckWithout, hasDuplicates, type Card } from "./cards";
 import { bestFive, describe, evaluate } from "./evaluator";
 import { positionsFor, type Position, type TableSize } from "./ranges";
 import { createRandom, nextSeed, shuffle } from "./random";
@@ -262,13 +262,33 @@ const seatWithPosition = (state: GameState, position: Position): number =>
 
 /* ------------------------------------------------------------- repartir mano */
 
-/** Nueva mano: rota el botón, recompra a quien se quedó sin fichas y reparte. */
-export function startHand(state: GameState): GameState {
+/** Dos cartas distintas y dentro de la baraja: lo que se puede forzar al héroe. */
+export function isValidHeroCards(cards: readonly Card[] | undefined): cards is readonly Card[] {
+  return (
+    cards !== undefined &&
+    cards.length === 2 &&
+    cards.every((card) => Number.isInteger(card) && card >= 0 && card < 52) &&
+    !hasDuplicates(cards)
+  );
+}
+
+/**
+ * Nueva mano: rota el botón, recompra a quien se quedó sin fichas y reparte.
+ *
+ * `heroCards` fuerza la mano del héroe (para practicar un sitio concreto): esas
+ * dos cartas salen de la baraja antes de mezclar, así que el resto de la mesa
+ * reparte normal y nadie puede tener una copia.
+ */
+export function startHand(
+  state: GameState,
+  options: { heroCards?: readonly Card[] } = {},
+): GameState {
   const size = state.size;
   const handNumber = state.handNumber + 1;
   const buttonSeat = state.handNumber === 0 ? state.buttonSeat : (state.buttonSeat + 1) % size;
   const random = createRandom(state.seed);
-  const deck = shuffle(DECK, random);
+  const chosen = isValidHeroCards(options.heroCards) ? [...options.heroCards] : null;
+  const deck = shuffle(chosen ? deckWithout(chosen) : DECK, random);
   let rebuys = state.stats.rebuys;
   let net = state.stats.net;
 
@@ -301,7 +321,7 @@ export function startHand(state: GameState): GameState {
   for (let round = 0; round < 2; round++) {
     for (let step = 1; step <= size; step++) {
       const seat = (buttonSeat + step) % size;
-      players[seat].cards.push(deck[index++]);
+      players[seat].cards.push(chosen && seat === state.heroSeat ? chosen[round] : deck[index++]);
     }
   }
 

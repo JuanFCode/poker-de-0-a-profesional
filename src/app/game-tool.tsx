@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { GridLegend, HandGrid } from "@/components/hand-grid";
+import { HeroHandPicker } from "@/components/hero-hand-picker";
 import { LiveTable } from "@/components/live-table";
 import { PlayingCard } from "@/components/playing-card";
 import { Stat } from "@/components/tool-shell";
 import { botMove } from "@/lib/poker/bot";
+import { type Card } from "@/lib/poker/cards";
 import { advise, bluffRead, matchesAdvice, spotRange, type Advice } from "@/lib/poker/coach";
 import {
   applyAction,
@@ -15,6 +17,7 @@ import {
   EMPTY_STATS,
   formatBB,
   isHeroTurn,
+  isValidHeroCards,
   legalMoves,
   normalizeStats,
   RAKE,
@@ -71,6 +74,8 @@ export function GameTool() {
   const [botNote, setBotNote] = useState<string | null>(null);
   /** Lo que has movido tú el deslizador; si no lo tocas manda la sugerencia. */
   const [raiseOverride, setRaiseOverride] = useState<number | null>(null);
+  /** Cartas que te eliges tú; vacío = reparto al azar. */
+  const [myCards, setMyCards] = useState<Card[]>([]);
 
   const heroTurn = isHeroTurn(state) && state.result === null;
   const legal = heroTurn ? legalMoves(state, state.heroSeat) : null;
@@ -140,7 +145,7 @@ export function GameTool() {
     setBotNote(null);
     setRaiseOverride(null);
     const base = state.handNumber === 0 || state.size !== size || state.rake !== rake ? fresh() : state;
-    setState(startHand(base));
+    setState(startHand(base, isValidHeroCards(myCards) ? { heroCards: myCards } : {}));
   };
 
   const restart = (options: { size?: TableSize; rake?: boolean }) => {
@@ -260,6 +265,10 @@ export function GameTool() {
                   Siguiente mano
                 </button>
               </div>
+            )}
+
+            {(state.handNumber === 0 || state.result !== null) && (
+              <HeroHandPicker cards={myCards} onChange={setMyCards} />
             )}
 
             {legal && (

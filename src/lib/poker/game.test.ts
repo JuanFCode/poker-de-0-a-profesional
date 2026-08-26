@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCards } from "./cards";
+import { hasDuplicates, parseCards } from "./cards";
 import {
   applyAction,
   BIG_BLIND,
@@ -37,6 +37,26 @@ describe("reparto", () => {
     expect(bb.bet).toBe(BIG_BLIND);
     expect(state.currentBet).toBe(BIG_BLIND);
     expect(totalPot(state)).toBe(SMALL_BLIND + BIG_BLIND);
+  });
+
+  it("puede repartirte las cartas que eliges tú", () => {
+    const chosen = parseCards("AsKs");
+    const state = startHand(createGame({ size: 6, seed: 7, rake: false }), { heroCards: chosen });
+    const hero = state.players[state.heroSeat];
+
+    expect(hero.cards).toEqual(chosen);
+    // Nadie más puede tener una copia y la baraja sigue cuadrando.
+    const dealt = state.players.flatMap((player) => player.cards);
+    expect(new Set([...dealt, ...state.deck]).size).toBe(52);
+    expect(state.deck.length).toBe(52 - 2 * 6);
+  });
+
+  it("ignora una elección inválida y reparte al azar", () => {
+    const state = startHand(createGame({ size: 6, seed: 7, rake: false }), {
+      heroCards: parseCards("AsAs"),
+    });
+    expect(state.players[state.heroSeat].cards.length).toBe(2);
+    expect(hasDuplicates(state.players.flatMap((player) => player.cards))).toBe(false);
   });
 
   it("empieza a hablar el primero de la mesa, no el botón", () => {
