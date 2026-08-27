@@ -7,8 +7,8 @@ import { LESSON_CONTENT } from "@/content/registry";
 const contentDir = path.resolve(import.meta.dirname, "../content");
 
 describe("temario", () => {
-  it("tiene seis fases numeradas en orden", () => {
-    expect(CURRICULUM).toHaveLength(6);
+  it("tiene siete fases numeradas en orden", () => {
+    expect(CURRICULUM).toHaveLength(7);
     CURRICULUM.forEach((module, index) => expect(module.index).toBe(index));
   });
 

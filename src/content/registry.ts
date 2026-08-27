@@ -43,6 +43,11 @@ export const LESSON_CONTENT: Record<string, () => Promise<{ default: ComponentTy
   "bankroll/tilt": () => import("./bankroll/tilt.mdx"),
   "bankroll/rutina-de-estudio": () => import("./bankroll/rutina-de-estudio.mdx"),
 
+  "torneo/el-stack-manda": () => import("./torneo/el-stack-manda.mdx"),
+  "torneo/icm-y-la-burbuja": () => import("./torneo/icm-y-la-burbuja.mdx"),
+  "torneo/bounty-e-hypers": () => import("./torneo/bounty-e-hypers.mdx"),
+  "torneo/niveles-y-ante": () => import("./torneo/niveles-y-ante.mdx"),
+
   "profesional/el-rastrillo": () => import("./profesional/el-rastrillo.mdx"),
   "profesional/seleccion-de-mesa": () => import("./profesional/seleccion-de-mesa.mdx"),
   "profesional/medir-tu-juego": () => import("./profesional/medir-tu-juego.mdx"),
