@@ -21,6 +21,11 @@ const PRIMARY: NavLink[] = [
 const TOOLS: NavLink[] = [
   { href: "/herramientas/mesa", label: "La mesa", hint: "Tu silla y el plan de cada posición" },
   { href: "/herramientas/rangos", label: "Rangos", hint: "Las 169 manos, con modo test" },
+  {
+    href: "/herramientas/torneo",
+    label: "Push o fold",
+    hint: "Torneo: all-in, pagar y resubir con stack corto",
+  },
   { href: "/herramientas/odds", label: "Odds y equity", hint: "Pot odds, outs y simulador" },
   { href: "/herramientas/quiz", label: "Quiz", hint: "Repaso espaciado de las reglas" },
   { href: "/herramientas/bankroll", label: "Bankroll", hint: "Tracker de sesiones y varianza" },

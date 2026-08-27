@@ -12,6 +12,7 @@ import { CURRICULUM, TOTAL_LESSONS } from "@/lib/curriculum";
 const TOOLS = [
   { href: "/herramientas/mesa", name: "La mesa", line: "Tu silla y el plan", mark: "◎" },
   { href: "/herramientas/rangos", name: "Rangos", line: "Las 169 manos", mark: "♠" },
+  { href: "/herramientas/torneo", name: "Push o fold", line: "Torneo, stack corto", mark: "▲" },
   { href: "/herramientas/odds", name: "Odds y equity", line: "Pot odds y outs", mark: "♦" },
   { href: "/herramientas/quiz", name: "Quiz", line: "Repaso espaciado", mark: "♣" },
   { href: "/herramientas/bankroll", name: "Bankroll", line: "Sesiones y varianza", mark: "♥" },
@@ -66,7 +67,7 @@ export default function Home() {
 
           <div className="rule-brass mt-10" />
 
-          <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {TOOLS.map((tool) => (
               <li key={tool.href}>
                 <Link
